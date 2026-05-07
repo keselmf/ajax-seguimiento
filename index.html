@@ -315,6 +315,8 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 .btn-delete{width:100%;background:#fff;color:#E24B4A;border:1px solid #F7C1C1;border-radius:14px;padding:14px;font-size:15px;font-weight:500;margin-bottom:20px;cursor:pointer;font-family:Inter,sans-serif}
 
 /* TOAST */
+.ifield{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:11px 14px;transition:border-color .15s,background .3s}
+.ifield:focus-within{border-color:#185FA5}
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1A1916;color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;z-index:500;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 
@@ -852,52 +854,116 @@ function showDetail(id) {
       '<div style="font-size:17px;font-weight:500;margin-bottom:6px">'+c.cliente+'</div>'
       +'<div style="display:flex;gap:5px;flex-wrap:wrap">'+badges+'</div>';
 
-    function GFLD(l,v,cls){
-      return '<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:11px 14px">'
-        +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+l+'</div>'
-        +'<div style="font-size:14px;color:'+(cls==='ov'?'#E24B4A':cls==='ok'?'#1D9E75':'#1A1916')+';line-height:1.4">'+(v||'—')+'</div>'
+    // Inline editable field — text input
+    function IFT(label, fieldKey, value) {
+      var ro = IS_READONLY ? 'readonly' : '';
+      var cursor = IS_READONLY ? 'default' : 'text';
+      return '<div class="ifield" data-key="'+fieldKey+'">'
+        +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+label+'</div>'
+        +'<input type="text" value="'+(value||'')+'" '+ro
+        +' style="width:100%;border:none;outline:none;font-family:Inter,sans-serif;font-size:14px;color:#1A1916;background:none;cursor:'+cursor+'"'
+        +' placeholder="—">'
+        +'</div>';
+    }
+    // Inline editable field — date
+    function IFD(label, fieldKey, value) {
+      var ro = IS_READONLY ? 'readonly' : '';
+      var isoVal = value ? toISODate(value) : '';
+      return '<div class="ifield" data-key="'+fieldKey+'">'
+        +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+label+'</div>'
+        +'<input type="date" value="'+isoVal+'" '+ro
+        +' style="width:100%;border:none;outline:none;font-family:Inter,sans-serif;font-size:14px;color:#1A1916;background:none;cursor:'+(IS_READONLY?'default':'pointer')+'">'
+        +'</div>';
+    }
+    // Inline editable field — select
+    function IFS(label, fieldKey, value, options) {
+      if(IS_READONLY) return '<div class="ifield" data-key="'+fieldKey+'">'
+        +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+label+'</div>'
+        +'<div style="font-size:14px;color:#1A1916">'+(value||'—')+'</div></div>';
+      var opts = options.map(function(o){ return '<option value="'+o+'"'+(o===value?' selected':'')+'>'+o+'</option>'; }).join('');
+      return '<div class="ifield" data-key="'+fieldKey+'">'
+        +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+label+'</div>'
+        +'<select style="width:100%;border:none;outline:none;font-family:Inter,sans-serif;font-size:14px;color:#1A1916;background:none;cursor:pointer;appearance:auto">'+opts+'</select>'
+        +'</div>';
+    }
+    // Inline editable field — textarea
+    function IFTA(label, fieldKey, value) {
+      var ro = IS_READONLY ? 'readonly' : '';
+      return '<div class="ifield" data-key="'+fieldKey+'">'
+        +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">'+label+'</div>'
+        +'<textarea '+ro+' rows="2"'
+        +' style="width:100%;border:none;outline:none;font-family:Inter,sans-serif;font-size:14px;color:#1A1916;background:none;resize:none;cursor:'+(IS_READONLY?'default':'text')+'"'
+        +' placeholder="—">'+(value||'')+'</textarea>'
         +'</div>';
     }
 
     var body =
-      // Fila 1: Tipo de cuenta | Distribuidor | Último contacto
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
-      +GFLD('Tipo de cuenta',TS(c['tipo de cuenta']))
-      +GFLD('Distribuidor',c.Distri||'')
-      +GFLD('\u00daltimo contacto',fmtDate(c.ultimo_contacto))
+      +IFS('Tipo de cuenta','tipo de cuenta',c['tipo de cuenta'],['Monitoreo','Integrador','Distri','Instalador/Monitoreo Mayorista','Instalador'])
+      +IFT('Distribuidor','Distri',c.Distri)
+      +IFD('Último contacto','ultimo_contacto',c.ultimo_contacto)
       +'</div>'
-      // Fila 2: Notas
-      +(c.notas?'<div style="margin-bottom:8px">'+GFLD('Notas',c.notas)+'</div>':'')
-      // Fila 3: Próxima acción | Fecha
+      +'<div style="margin-bottom:8px">'+IFTA('Notas','notas',c.notas)+'</div>'
       +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">'
-      +GFLD('Pr\u00f3xima acci\u00f3n',c.proxima_accion)
-      +GFLD('Fecha',fmtDate(c.fecha_proxima_accion),ov?'ov':'')
+      +IFT('Próxima acción','proxima_accion',c.proxima_accion)
+      +IFD('Fecha','fecha_proxima_accion',c.fecha_proxima_accion)
       +'</div>'
-      // Fila 4: Seguimiento técnico | Fecha técnica
-      +(tec?'<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">'
-        +GFLD('Seguimiento t\u00e9cnico',c['Accion de seguimiento tecnico'])
-        +GFLD('Fecha t\u00e9cnica',fmtDate(c.fecha_proxima_accion_tecnica),dt&&dt<TODAY?'ov':'ok')
-        +'</div>':'')
-      // Fila 5: Contacto principal | Tipo de cliente
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
-      +GFLD('Contacto principal',c['contacto principal'])
-      +GFLD('Tipo de cliente',c['Tipo de Cliente'])
+      +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">'
+      +IFT('Seguimiento técnico','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])
+      +IFD('Fecha técnica','fecha_proxima_accion_tecnica',c.fecha_proxima_accion_tecnica)
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+      +IFT('Contacto principal','contacto principal',c['contacto principal'])
+      +IFS('Tipo de cliente','Tipo de Cliente',c['Tipo de Cliente'],['actual','nuevo'])
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+      +IFS('Estado','estado',c.estado,['Activo','Prospecto','En negociación','En riesgo','Cerrado'])
+      +IFS('Prioridad','Prioridad',c.Prioridad,['1. Alta','2. Media','3. Baja'])
       +'</div>';
 
     document.getElementById('dd-panel-content').innerHTML =
       '<div style="margin-bottom:12px">'
       +'<button id="dd-back-btn" style="background:none;border:none;color:#185FA5;font-size:13px;cursor:pointer;font-family:Inter,sans-serif;padding:0;display:flex;align-items:center;gap:4px">'
       +'\u2190 Volver a la lista</button></div>'
-      + body
-      + (!IS_READONLY ? '<button id="dd-edit-btn" style="width:100%;background:#185FA5;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:500;cursor:pointer;font-family:Inter,sans-serif">Editar</button>' : '');
+      + body;
 
-    // Wire buttons after DOM insert
     document.getElementById('dd-back-btn').addEventListener('click', function(){
       renderDDPanel(currentDDFilter);
     });
+
+    // Wire inline save on blur/change for each field
     if(!IS_READONLY){
-      var editBtn = document.getElementById('dd-edit-btn');
-      if(editBtn) editBtn.addEventListener('click', function(){ openEdit(id); });
+      document.querySelectorAll('#dd-panel-content .ifield').forEach(function(wrap){
+        var key = wrap.dataset.key;
+        var el = wrap.querySelector('input,textarea,select');
+        if(!el) return;
+        var isSelect = el.tagName === 'SELECT';
+        var isDate = el.type === 'date';
+
+        el.addEventListener('focus', function(){ wrap.style.borderColor='#185FA5'; });
+
+        function saveField(){
+          var val = isDate ? (el.value ? toDisplayDate(el.value) : '') : el.value;
+          // Update local cache
+          for(var i=0;i<CUENTAS.length;i++){
+            if(CUENTAS[i].key_app===id){ CUENTAS[i][key]=val; break; }
+          }
+          // Visual feedback
+          wrap.style.background='#EAF3DE';
+          wrap.style.borderColor='#1D9E75';
+          setTimeout(function(){ wrap.style.background=''; wrap.style.borderColor=''; }, 1000);
+          // Save to sheet — only the changed field
+          var fields={};
+          fields[key]=val;
+          fetch(API+'?action=update&payload='+encodeURIComponent(JSON.stringify({action:'update',id:id,fields:fields})))
+            .then(function(r){return r.json();})
+            .then(function(data){ if(!data.success) showToast('Error al guardar'); })
+            .catch(function(){ showToast('Error de conexión'); });
+        }
+
+        if(isSelect){ el.addEventListener('change', saveField); }
+        else { el.addEventListener('blur', saveField); }
+      });
     }
     return;
   }
@@ -1009,6 +1075,10 @@ function toInputDate(s) {
   return d.getFullYear()+'-'+mm+'-'+dd;
 }
 
+function toISODate(s) {
+  var d = parseDate(s); if(!d) return '';
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function toDisplayDate(s) {
   if(!s)return '';
   var p=s.split('-');
