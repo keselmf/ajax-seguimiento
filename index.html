@@ -511,6 +511,20 @@ if('serviceWorker' in navigator){
   });
 }
 var API = 'https://script.google.com/macros/s/AKfycbwljgsU-e18AqjlNzsqvN_oMmP8r5bq3z16EDo8XYcpFA1OkFguEfWtBrdYO8tVUAxc/exec';
+
+// ============ SECURITY — definir PRIMERO ============
+var SECRET_TOKEN = 'Jqi-n3-DeaWBwG2savrvJg';
+var IS_READONLY = (function(){
+  var params = new URLSearchParams(window.location.search);
+  var urlToken = params.get('token');
+  if(urlToken === SECRET_TOKEN){
+    try { localStorage.setItem('ajax_token', SECRET_TOKEN); } catch(e){}
+    return false;
+  }
+  try {
+    return localStorage.getItem('ajax_token') !== SECRET_TOKEN;
+  } catch(e){ return true; }
+})();
 var CUENTAS = [];
 var TODAY = new Date(); TODAY.setHours(0,0,0,0);
 var prevTab = 'todas';
@@ -1356,21 +1370,7 @@ function initLayout() {
 }
 
 // ============ PANEL STATE ============
-// States: 'list' | 'detail'
 var DD_STATE = 'list';
-var SECRET_TOKEN = 'Jqi-n3-DeaWBwG2savrvJg';
-var IS_READONLY = (function(){
-  var params = new URLSearchParams(window.location.search);
-  var urlToken = params.get('token');
-  if(urlToken === SECRET_TOKEN){
-    try { localStorage.setItem('ajax_token', SECRET_TOKEN); } catch(e){}
-    return false;
-  }
-  try {
-    return localStorage.getItem('ajax_token') !== SECRET_TOKEN;
-  } catch(e){ return true; }
-})();
-
 var currentDDFilter = {key:'todas', label:'Todas las cuentas'};
 
 function openDDPanel(key, label, data) {
