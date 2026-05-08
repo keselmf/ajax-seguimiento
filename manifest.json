@@ -2,20 +2,20 @@
   "name": "Ajax · Seguimiento",
   "short_name": "Ajax",
   "description": "Seguimiento de cuentas Ajax Systems Argentina",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/ajax-seguimiento/",
+  "scope": "/ajax-seguimiento/",
   "display": "standalone",
   "background_color": "#F5F4F1",
   "theme_color": "#185FA5",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "/ajax-seguimiento/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-512.png",
+      "src": "/ajax-seguimiento/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
