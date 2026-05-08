@@ -2,7 +2,7 @@
   "name": "Ajax · Seguimiento",
   "short_name": "Ajax",
   "description": "Seguimiento de cuentas Ajax Systems Argentina",
-  "start_url": "/ajax-seguimiento/",
+  "start_url": "/ajax-seguimiento/?token=Jqi-n3-DeaWBwG2savrvJg",
   "scope": "/ajax-seguimiento/",
   "display": "standalone",
   "background_color": "#F5F4F1",
