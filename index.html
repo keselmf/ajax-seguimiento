@@ -290,8 +290,8 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 /* EDIT VIEW */
 .edit-view{display:none;position:fixed;inset:0;background:#F5F4F1;z-index:400;align-items:stretch;justify-content:stretch}
 .edit-view.open{display:flex}
-.edit-inner{width:100%;height:100vh;height:100dvh;background:#fff;border-radius:0;box-shadow:none;display:flex;flex-direction:column;overflow:hidden}
-.edit-hdr{background:#fff;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.08);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0}
+.edit-inner{width:100%!important;max-width:none!important;height:100vh!important;height:100dvh!important;background:#fff;border-radius:0!important;box-shadow:none!important;display:flex;flex-direction:column;overflow:hidden}
+.edit-hdr{background:#fff;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.08);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;border-radius:0}
 .edit-back{font-size:14px;color:#185FA5;cursor:pointer}
 .edit-title{font-size:16px;font-weight:500}
 .edit-save{font-size:14px;font-weight:500;color:#185FA5;cursor:pointer;background:none;border:none;font-family:Inter,sans-serif}
@@ -334,6 +334,46 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 .ni-ic{font-size:19px;line-height:1}
 .ni-lb{font-size:9px;color:#9A9690;letter-spacing:.03em}
 .ni.active .ni-lb{color:#185FA5;font-weight:500}
+
+/* FINAL EDIT FULLSCREEN OVERRIDE */
+.edit-view.open{
+  display:flex!important;
+}
+.edit-view{
+  align-items:stretch!important;
+  justify-content:stretch!important;
+}
+.edit-view .edit-inner{
+  width:100%!important;
+  max-width:none!important;
+  height:100vh!important;
+  height:100dvh!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.edit-view .edit-hdr{
+  border-radius:0!important;
+}
+
+/* Desktop: keep modal only on real desktop screens */
+@media (min-width:900px) and (pointer:fine) {
+  .edit-view{
+    background:rgba(245,244,241,.7)!important;
+    backdrop-filter:blur(4px)!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+  .edit-view .edit-inner{
+    width:70%!important;
+    height:85vh!important;
+    border-radius:16px!important;
+    box-shadow:0 8px 40px rgba(0,0,0,.15)!important;
+  }
+  .edit-view .edit-hdr{
+    border-radius:16px 16px 0 0!important;
+  }
+}
+
 </style>
 </head>
 <body>
