@@ -375,10 +375,10 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 }
 
 
-.hide-main-list{display:none!important}
-
-/* Hide full account list on initial dashboard */
-#v-todas #todas-list{
+/* HOME WITHOUT ACCOUNT LIST */
+#v-todas #todas-list,
+#v-todas .card,
+#v-todas .sec-hd{
   display:none!important;
 }
 
@@ -509,7 +509,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
         <div class="bblock" id="tipo"></div>
         <div class="sec-title">SEGUIMIENTO T&#201;CNICO VENCIDO</div>
         <div class="bblock" id="tecbl"></div>
-        <div id="todas-list" style="display:none!important"></div>
+        <!-- listado inicial removido: no renderizar cuentas en dashboard -->
       </div>
     </div>
     <div class="view" id="v-vencidas"><div class="alert"><div class="alert-t" id="vt"></div><div class="alert-s">Requieren acci&#243;n inmediata</div></div><div id="vlist"></div></div>
@@ -854,17 +854,8 @@ function renderAll() {
       +'<span class="bcnt" style="color:'+col+'">'+dias+'d</span></div>';
   }).join('');
   document.getElementById('tecbl').innerHTML=tecHtml||'<div class="empty"><div class="empty-t">Sin t\u00e9cnico vencido</div></div>';
-
-  // Todas list - by prioridad
-  var pList=[{k:'1. Alta',l:'Alta',dot:'#E24B4A'},{k:'2. Media',l:'Media',dot:'#BA7517'},{k:'3. Baja',l:'Baja',dot:'#9A9690'}];
-  var tlHtml='';
-  pList.forEach(function(p){
-    var grupo=CUENTAS.filter(function(c){return c.Prioridad===p.k&&c.estado!=='Cerrado';}).sort(function(a,b){return daysOverdue(b)-daysOverdue(a);});
-    if(!grupo.length)return;
-    tlHtml+='<div class="sec-hd"><div class="sec-dot" style="background:'+p.dot+'"></div><span class="sec-lbl">'+p.l+' prioridad</span><span class="sec-cnt">'+grupo.length+'</span></div>';
-    grupo.forEach(function(c){tlHtml+=RC(c);});
-  });
-  document.getElementById('todas-list').innerHTML = '';
+  // Listado inicial removido para acelerar la pantalla principal.
+  // Las cuentas se muestran solo al tocar filtros, métricas, búsqueda o tabs.
 
   // Vencidas
   var vSort=vencidas.filter(function(c){return c.cliente;}).sort(function(a,b){return daysOverdue(b)-daysOverdue(a);});
