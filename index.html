@@ -504,6 +504,11 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 <div class="toast" id="toast"></div>
 
 <script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(e){console.log('SW:',e);});
+  });
+}
 var API = 'https://script.google.com/macros/s/AKfycbwljgsU-e18AqjlNzsqvN_oMmP8r5bq3z16EDo8XYcpFA1OkFguEfWtBrdYO8tVUAxc/exec';
 var CUENTAS = [];
 var TODAY = new Date(); TODAY.setHours(0,0,0,0);
