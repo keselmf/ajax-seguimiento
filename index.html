@@ -317,6 +317,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 /* TOAST */
 .ifield{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:11px 14px;transition:border-color .15s,background .3s}
 .ifield:focus-within{border-color:#185FA5}
+.readonly-hidden{display:none!important}
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1A1916;color:#fff;font-size:13px;padding:10px 18px;border-radius:20px;z-index:500;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 
@@ -1239,8 +1240,8 @@ document.getElementById('fab').addEventListener('click',openNew);
 
 // Readonly: hide edit controls globally
 if(IS_READONLY){
-  document.getElementById('fab').style.display='none';
-  document.getElementById('detail-edit-btn').style.display='none';
+  document.getElementById('fab').classList.add('readonly-hidden');
+  document.getElementById('detail-edit-btn').classList.add('readonly-hidden');
 }
 
 // Search
@@ -1290,7 +1291,7 @@ function initLayout() {
     // Readonly mode — hide FAB and edit capabilities
     if(IS_READONLY){
       var fab = document.getElementById('fab');
-      if(fab) fab.style.display = 'none';
+      if(fab) fab.classList.add('readonly-hidden');
     }
 
     // Make hdr-badge clickable to open vencidas
@@ -1360,7 +1361,14 @@ var DD_STATE = 'list';
 var SECRET_TOKEN = 'Jqi-n3-DeaWBwG2savrvJg';
 var IS_READONLY = (function(){
   var params = new URLSearchParams(window.location.search);
-  return params.get('token') !== SECRET_TOKEN;
+  var urlToken = params.get('token');
+  if(urlToken === SECRET_TOKEN){
+    try { localStorage.setItem('ajax_token', SECRET_TOKEN); } catch(e){}
+    return false;
+  }
+  try {
+    return localStorage.getItem('ajax_token') !== SECRET_TOKEN;
+  } catch(e){ return true; }
 })();
 
 var currentDDFilter = {key:'todas', label:'Todas las cuentas'};
