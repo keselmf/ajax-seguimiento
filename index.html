@@ -376,6 +376,12 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 
 
 .hide-main-list{display:none!important}
+
+/* Hide full account list on initial dashboard */
+#v-todas #todas-list{
+  display:none!important;
+}
+
 </style>
 </head>
 <body>
@@ -503,7 +509,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
         <div class="bblock" id="tipo"></div>
         <div class="sec-title">SEGUIMIENTO T&#201;CNICO VENCIDO</div>
         <div class="bblock" id="tecbl"></div>
-        <div id="todas-list"></div>
+        <div id="todas-list" style="display:none!important"></div>
       </div>
     </div>
     <div class="view" id="v-vencidas"><div class="alert"><div class="alert-t" id="vt"></div><div class="alert-s">Requieren acci&#243;n inmediata</div></div><div id="vlist"></div></div>
@@ -858,13 +864,7 @@ function renderAll() {
     tlHtml+='<div class="sec-hd"><div class="sec-dot" style="background:'+p.dot+'"></div><span class="sec-lbl">'+p.l+' prioridad</span><span class="sec-cnt">'+grupo.length+'</span></div>';
     grupo.forEach(function(c){tlHtml+=RC(c);});
   });
-  document.getElementById('todas-list').innerHTML = `
-  <div class="empty" style="padding:32px 20px;text-align:center">
-    <div class="empty-t" style="font-size:15px;color:#666">
-      Seleccioná una métrica o filtro para ver cuentas
-    </div>
-  </div>
-`;
+  document.getElementById('todas-list').innerHTML = '';
 
   // Vencidas
   var vSort=vencidas.filter(function(c){return c.cliente;}).sort(function(a,b){return daysOverdue(b)-daysOverdue(a);});
