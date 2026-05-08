@@ -382,15 +382,6 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
   display:none!important;
 }
 
-
-/* MOBILE ONLY: hide Vencidas menu item */
-@media (max-width: 767px) {
-  .tabs > .tab[data-tab="vencidas"],
-  .nav > .ni[data-tab="vencidas"] {
-    display:none!important;
-  }
-}
-
 </style>
 </head>
 <body>
@@ -419,6 +410,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 
   <div class="tabs">
     <div class="tab active" data-tab="todas">Tablero</div>
+    <div class="tab" data-tab="vencidas">Vencidas <span class="tc" id="tc-v"></span></div>
     <div class="tab" data-tab="hoy">Hoy <span class="tc" id="tc-h" style="display:none"></span></div>
     <div class="tab" data-tab="tecnico">Técnico <span class="tc" id="tc-t"></span></div>
     <div class="tab" data-tab="agenda">Agenda</div>
@@ -532,6 +524,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 
   <nav class="nav">
     <div class="ni active" data-tab="todas"><span class="ni-ic">&#8863;</span><span class="ni-lb">Tablero</span></div>
+    <div class="ni" data-tab="vencidas"><span class="ni-ic">&#9888;</span></div>
     <div class="ni" data-tab="hoy"><span class="ni-ic">&#9711;</span><span class="ni-lb">Hoy</span></div>
     <div class="ni" data-tab="tecnico"><span class="ni-ic">&#9881;</span><span class="ni-lb">T&#233;cnico</span></div>
     <div class="ni" data-tab="agenda"><span class="ni-ic">&#9638;</span><span class="ni-lb">Agenda</span></div>
@@ -795,7 +788,7 @@ function renderAll() {
   var negociacion = CUENTAS.filter(function(c){return c.estado==='En negociaci\u00f3n';}).length;
   document.getElementById('mgrid').innerHTML =
     '<div class="metric" data-action="sf" data-key="todas" data-label="Total"><div class="ml">Total</div><div class="mn c-blue">'+total+'</div></div>'
-    +'<div class="metric" data-action="st" data-tab="vencidas"><div class="ml">Vencidas</div><div class="mn c-red">'+vencidas.length+'</div></div>'
+    +'<div class="metric" data-action="st" data-tab="vencidas"><div class="mn c-red">'+vencidas.length+'</div></div>'
     +'<div class="metric" data-action="sf" data-key="sinfecha" data-label="Sin fecha"><div class="ml">Sin fecha</div><div class="mn c-gray">'+sf+'</div></div>';
   document.getElementById('mgrid2').innerHTML =
     '<div class="metric" data-action="sf" data-key="activas" data-label="Clientes"><div class="ml">Clientes</div><div class="mn c-green">'+activas+'</div></div>'
