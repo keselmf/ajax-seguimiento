@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Ajax">
 <meta name="theme-color" content="#185FA5">
-<link rel="manifest" href="./manifest.json">
+<link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon-192.png">
 <title>Ajax · Seguimiento</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1236,6 +1236,12 @@ document.getElementById('detail-edit-btn').addEventListener('click',function(){o
 document.getElementById('fbtn').addEventListener('click',function(){ST(prevTab);});
 document.getElementById('sbtn').addEventListener('click',function(){CS();});
 document.getElementById('fab').addEventListener('click',openNew);
+
+// Readonly: hide edit controls globally
+if(IS_READONLY){
+  document.getElementById('fab').style.display='none';
+  document.getElementById('detail-edit-btn').style.display='none';
+}
 
 // Search
 var si=document.getElementById('si'),sx=document.getElementById('sx'),stm;
