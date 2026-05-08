@@ -374,6 +374,8 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
   }
 }
 
+
+.hide-main-list{display:none!important}
 </style>
 </head>
 <body>
@@ -856,7 +858,13 @@ function renderAll() {
     tlHtml+='<div class="sec-hd"><div class="sec-dot" style="background:'+p.dot+'"></div><span class="sec-lbl">'+p.l+' prioridad</span><span class="sec-cnt">'+grupo.length+'</span></div>';
     grupo.forEach(function(c){tlHtml+=RC(c);});
   });
-  document.getElementById('todas-list').innerHTML=tlHtml;
+  document.getElementById('todas-list').innerHTML = `
+  <div class="empty" style="padding:32px 20px;text-align:center">
+    <div class="empty-t" style="font-size:15px;color:#666">
+      Seleccioná una métrica o filtro para ver cuentas
+    </div>
+  </div>
+`;
 
   // Vencidas
   var vSort=vencidas.filter(function(c){return c.cliente;}).sort(function(a,b){return daysOverdue(b)-daysOverdue(a);});
