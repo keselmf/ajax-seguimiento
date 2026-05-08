@@ -383,12 +383,10 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 }
 
 
-/* MOBILE ONLY: rename dashboard + hide Vencidas tab */
-@media (max-width: 899px) {
-  [data-view="vencidas"],
-  [data-tab="vencidas"],
-  #tab-vencidas,
-  .tab-vencidas{
+/* MOBILE ONLY: hide Vencidas menu item */
+@media (max-width: 767px) {
+  .tabs > .tab[data-tab="vencidas"],
+  .nav > .ni[data-tab="vencidas"] {
     display:none!important;
   }
 }
@@ -421,7 +419,6 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 
   <div class="tabs">
     <div class="tab active" data-tab="todas">Tablero</div>
-    <div class="tab" data-tab="vencidas">Vencidas <span class="tc" id="tc-v"></span></div>
     <div class="tab" data-tab="hoy">Hoy <span class="tc" id="tc-h" style="display:none"></span></div>
     <div class="tab" data-tab="tecnico">Técnico <span class="tc" id="tc-t"></span></div>
     <div class="tab" data-tab="agenda">Agenda</div>
@@ -535,7 +532,6 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 
   <nav class="nav">
     <div class="ni active" data-tab="todas"><span class="ni-ic">&#8863;</span><span class="ni-lb">Tablero</span></div>
-    <div class="ni" data-tab="vencidas"><span class="ni-ic">&#9888;</span><span class="ni-lb">Vencidas</span></div>
     <div class="ni" data-tab="hoy"><span class="ni-ic">&#9711;</span><span class="ni-lb">Hoy</span></div>
     <div class="ni" data-tab="tecnico"><span class="ni-ic">&#9881;</span><span class="ni-lb">T&#233;cnico</span></div>
     <div class="ni" data-tab="agenda"><span class="ni-ic">&#9638;</span><span class="ni-lb">Agenda</span></div>
@@ -1613,23 +1609,6 @@ document.getElementById('refresh-btn').addEventListener('click', function(){
   loadPBI();
   setTimeout(function(){ btn.classList.remove('spinning'); }, 1500);
 });
-</script>
-<script>
-// MOBILE ONLY: hide Vencidas menu/tab
-(function(){
-  function hideVencidas(){
-    if(window.innerWidth >= 900) return;
-    document.querySelectorAll('button,div,a').forEach(el=>{
-      const t=(el.textContent||'').trim().toLowerCase();
-      if(t==='vencidas'){
-        el.style.display='none';
-      }
-    });
-  }
-  document.addEventListener('DOMContentLoaded', hideVencidas);
-  setTimeout(hideVencidas,500);
-  setTimeout(hideVencidas,1500);
-})();
 </script>
 </body>
 </html>
