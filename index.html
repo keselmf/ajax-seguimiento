@@ -592,6 +592,10 @@ var TODAY = new Date(); TODAY.setHours(0,0,0,0);
 var prevTab = 'todas';
 var currentId = null;
 var isNew = false;
+var LAST_DATA_SIG = '';
+var DATA_LOADED_ONCE = false;
+var LAZY_VIEWS_DIRTY = {vencidas:true,hoy:true,tecnico:true,agenda:true};
+var LISTS = {};
 
 // ============ DATE HELPERS ============
 function parseDate(s) {
@@ -654,12 +658,20 @@ function RC(c) {
 function FLD(l,v,cls) { return '<div class="field"><div class="fl">'+l+'</div><div class="fv'+(cls?' '+cls:'')+'" >'+v+'</div></div>'; }
 
 function loadPBI() {
+  try {
+    var cachedPBI = localStorage.getItem('ajax_pbi');
+    if(cachedPBI && document.getElementById('pbi-upd').textContent === 'Cargando...') {
+      var cp = JSON.parse(cachedPBI);
+      if(cp && cp.actualizado){ var cd=new Date(cp.actualizado); document.getElementById('pbi-upd').textContent='Actualizado '+cd.getDate()+'/'+(cd.getMonth()+1)+'/'+cd.getFullYear(); }
+    }
+  } catch(e){}
   fetch(API + '?action=getPBI&_ts=' + Date.now(), { cache: 'no-store' })
     .then(function(r){return r.json();})
     .then(function(data){
       if (!data.success) { console.log('PBI no success', data); return; }
       console.log('PBI refresh OK', new Date().toLocaleTimeString(), data);
       var d = data.data;
+      try { localStorage.setItem('ajax_pbi', JSON.stringify(d)); } catch(e){}
       var fmt = function(v) {
         if (!v && v!==0) return '$0';
         var n = Number(v);
@@ -746,14 +758,17 @@ function loadPBI() {
 }
 
 
-function loadData() {
+function loadData(force) {
   // Mostrar datos cacheados instantaneamente si existen
   try {
     var cached = localStorage.getItem('ajax_cuentas');
     if(cached) {
       var cachedData = JSON.parse(cached);
-      if(cachedData && cachedData.length) {
+      if(cachedData && cachedData.length && !DATA_LOADED_ONCE) {
         CUENTAS = cachedData.filter(function(c){return c.key_app && c.cliente;});
+        LAST_DATA_SIG = JSON.stringify(cachedData);
+        DATA_LOADED_ONCE = true;
+        markLazyViewsDirty();
         document.getElementById('load-todas').style.display='none';
         document.getElementById('todas-content').style.display='block';
         renderAll();
@@ -763,11 +778,19 @@ function loadData() {
   } catch(e){}
 
   // Siempre fetch datos frescos en background
-  fetch(API+'?action=get')
+  fetch(API+'?action=get&_ts='+Date.now(), {cache:'no-store'})
     .then(function(r){return r.json();})
     .then(function(data){
       if (!data.success) { showToast('Error cargando datos'); return; }
+      var sig = JSON.stringify(data.data);
+      if(!force && sig === LAST_DATA_SIG && DATA_LOADED_ONCE){
+        updateLastRefreshHeader();
+        return;
+      }
+      LAST_DATA_SIG = sig;
+      DATA_LOADED_ONCE = true;
       CUENTAS = data.data.filter(function(c){return c.key_app && c.cliente;});
+      markLazyViewsDirty();
       // Guardar en cache para proxima apertura
       try { localStorage.setItem('ajax_cuentas', JSON.stringify(data.data)); } catch(e){}
       document.getElementById('load-todas').style.display='none';
@@ -782,6 +805,100 @@ function loadData() {
       if (IS_DESKTOP) renderDesktopMetrics();
     })
     .catch(function(e){ showToast('Error de conexi\u00f3n'); console.error(e); });
+}
+
+
+function updateLastRefreshHeader(){
+  var now = new Date();
+  var hdrUpd = document.getElementById('hdr-upd');
+  if(hdrUpd){
+    hdrUpd.textContent = 'Act. '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+    hdrUpd.style.display = '';
+  }
+}
+
+function markLazyViewsDirty(){
+  LAZY_VIEWS_DIRTY = {vencidas:true,hoy:true,tecnico:true,agenda:true};
+}
+
+function renderCardList(containerId, data, emptyHtml, limit){
+  limit = limit || 50;
+  LISTS[containerId] = {data:data||[], shown:limit, emptyHtml:emptyHtml};
+  renderCardListPage(containerId);
+}
+
+function renderCardListPage(containerId){
+  var state = LISTS[containerId];
+  var el = document.getElementById(containerId);
+  if(!state || !el) return;
+  var data = state.data || [];
+  var html = data.slice(0, state.shown).map(RC).join('') || state.emptyHtml;
+  if(data.length > state.shown){
+    html += '<div class="metric" data-action="more-list" data-list="'+containerId+'" style="text-align:center;margin:10px 0 16px"><div class="ml">Ver más</div><div class="ms">Mostrando '+state.shown+' de '+data.length+'</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderLazyView(tab){
+  if(!tab || tab==='todas' || !LAZY_VIEWS_DIRTY[tab]) return;
+  var vencidas = CUENTAS.filter(isOverdue);
+  var hoy = CUENTAS.filter(isToday);
+  var tec = CUENTAS.filter(function(c){return (c['seguimiento tecnico']||'').toLowerCase()==='si';});
+
+  if(tab==='vencidas'){
+    var vSort=vencidas.filter(function(c){return c.cliente;}).sort(function(a,b){return daysOverdue(b)-daysOverdue(a);});
+    document.getElementById('vt').textContent=vSort.length+' cuentas vencidas';
+    renderCardList('vlist', vSort, '<div class="empty"><div class="empty-t">No hay vencidas</div></div>');
+  }
+
+  if(tab==='hoy'){
+    renderCardList('hlist', hoy, '<div class="empty"><div class="empty-icon">&#9711;</div><div class="empty-t">Sin acciones para hoy</div></div>');
+  }
+
+  if(tab==='tecnico'){
+    var tecData=tec.filter(function(c){return c.cliente;}).sort(function(a,b){
+      var da=parseDate(a.fecha_proxima_accion_tecnica),db=parseDate(b.fecha_proxima_accion_tecnica);
+      if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;
+    });
+    var tecHtmlMain=tecData.map(function(c){
+      var d=parseDate(c.fecha_proxima_accion_tecnica);var dias=d?Math.floor((TODAY-d)/86400000):null;
+      return '<div class="card" data-action="sd" data-id="'+c.key_app+'">'
+        +'<div class="card-head '+(isOverdue(c)?'red':'gray')+'">'
+        +'<span class="card-hname '+(isOverdue(c)?'red':'gray')+'">'+c.cliente+'</span>'
+        +'<div class="card-hsem" style="background:'+(isOverdue(c)?'#E24B4A':'#BBBAB7')+'"></div>'
+        +'</div><div class="card-body">'
+        +'<div class="card-meta">'+TS(c['tipo de cuenta'])+'</div>'
+        +'<div class="ttag">'+(c['Accion de seguimiento tecnico']||'Seguimiento t\u00e9cnico activo')+'</div>'
+        +'<div class="card-foot"><span class="badge '+BP(c)+'">'+PL(c)+'</span>'
+        +(dias!==null?'<span class="cdate'+(dias>0?' ov':'')+'">'+( dias>0?dias+'d vencida':fmtDate(c.fecha_proxima_accion_tecnica))+'</span>':'')
+        +'</div></div></div>';
+    });
+    var tEl=document.getElementById('tlist');
+    if(tEl){
+      var first=tecHtmlMain.slice(0,50).join('')||'<div class="empty"><div class="empty-t">Sin seguimiento t\u00e9cnico</div></div>';
+      if(tecHtmlMain.length>50) first+='<div class="metric" data-action="render-all-tec" style="text-align:center;margin:10px 0 16px"><div class="ml">Ver todos</div><div class="ms">Mostrando 50 de '+tecHtmlMain.length+'</div></div>';
+      tEl.innerHTML=first;
+      LISTS['tlist_tecnico_html']={data:tecHtmlMain, shown:50};
+    }
+  }
+
+  if(tab==='agenda'){
+    var dnames2=['Dom','Lun','Mar','Mi\u00e9','Jue','Vie','S\u00e1b'];
+    var months2=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    var agHtml='';
+    for(var i=0;i<7;i++){
+      var day=new Date(TODAY);day.setDate(day.getDate()+i);
+      var acc=CUENTAS.filter(function(c){var d=parseDate(c.fecha_proxima_accion);return d&&d.getTime()===day.getTime();});
+      var lbl=i===0?('Hoy \u2014 '+dnames2[day.getDay()]+' '+day.getDate()+' '+months2[day.getMonth()]):(dnames2[day.getDay()]+' '+day.getDate()+' '+months2[day.getMonth()]);
+      if(!acc.length&&i>0)continue;
+      agHtml+='<div class="dblock"><div class="dlbl'+(i===0?' today':'')+'">'+lbl+'</div>';
+      if(acc.length){acc.forEach(function(c){agHtml+='<div class="aitem" data-action="sd" data-id="'+c.key_app+'"><div class="adot acc"></div><div><div class="aname">'+c.cliente+'</div><div class="asub">'+(c.proxima_accion||'Acci\u00f3n pendiente')+'</div></div></div>';});}
+      else{agHtml+='<div class="aitem"><div class="adot ok"></div><div><div class="aname" style="color:#9A9690">Sin acciones</div></div></div>';}
+      agHtml+='</div>';
+    }
+    document.getElementById('alist').innerHTML=agHtml;
+  }
+  LAZY_VIEWS_DIRTY[tab]=false;
 }
 
 // ============ RENDER ALL ============
@@ -881,48 +998,9 @@ function renderAll() {
   // Listado inicial removido para acelerar la pantalla principal.
   // Las cuentas se muestran solo al tocar filtros, métricas, búsqueda o tabs.
 
-  // Vencidas
-  var vSort=vencidas.filter(function(c){return c.cliente;}).sort(function(a,b){return daysOverdue(b)-daysOverdue(a);});
-  document.getElementById('vt').textContent=vSort.length+' cuentas vencidas';
-  document.getElementById('vlist').innerHTML=vSort.map(RC).join('')||'<div class="empty"><div class="empty-t">No hay vencidas</div></div>';
+  // Las listas de Vencidas/Hoy/Técnico/Agenda se renderizan bajo demanda para acelerar la carga inicial.
+  if(prevTab && prevTab !== 'todas') renderLazyView(prevTab);
 
-  // Hoy
-  document.getElementById('hlist').innerHTML=hoy.map(RC).join('')||'<div class="empty"><div class="empty-icon">&#9711;</div><div class="empty-t">Sin acciones para hoy</div></div>';
-
-  // Tecnico
-  var tecHtmlMain=tec.filter(function(c){return c.cliente;}).sort(function(a,b){
-    var da=parseDate(a.fecha_proxima_accion_tecnica),db=parseDate(b.fecha_proxima_accion_tecnica);
-    if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;
-  }).map(function(c){
-    var d=parseDate(c.fecha_proxima_accion_tecnica);var dias=d?Math.floor((TODAY-d)/86400000):null;
-    return '<div class="card" data-action="sd" data-id="'+c.key_app+'">'
-      +'<div class="card-head '+(isOverdue(c)?'red':'gray')+'">'
-      +'<span class="card-hname '+(isOverdue(c)?'red':'gray')+'">'+c.cliente+'</span>'
-      +'<div class="card-hsem" style="background:'+(isOverdue(c)?'#E24B4A':'#BBBAB7')+'"></div>'
-      +'</div><div class="card-body">'
-      +'<div class="card-meta">'+TS(c['tipo de cuenta'])+'</div>'
-      +'<div class="ttag">'+(c['Accion de seguimiento tecnico']||'Seguimiento t\u00e9cnico activo')+'</div>'
-      +'<div class="card-foot"><span class="badge '+BP(c)+'">'+PL(c)+'</span>'
-      +(dias!==null?'<span class="cdate'+(dias>0?' ov':'')+'">'+( dias>0?dias+'d vencida':fmtDate(c.fecha_proxima_accion_tecnica))+'</span>':'')
-      +'</div></div></div>';
-  }).join('');
-  document.getElementById('tlist').innerHTML=tecHtmlMain||'<div class="empty"><div class="empty-t">Sin seguimiento t\u00e9cnico</div></div>';
-
-  // Agenda
-  var dnames2=['Dom','Lun','Mar','Mi\u00e9','Jue','Vie','S\u00e1b'];
-  var months2=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  var agHtml='';
-  for(var i=0;i<7;i++){
-    var day=new Date(TODAY);day.setDate(day.getDate()+i);
-    var acc=CUENTAS.filter(function(c){var d=parseDate(c.fecha_proxima_accion);return d&&d.getTime()===day.getTime();});
-    var lbl=i===0?('Hoy \u2014 '+dnames2[day.getDay()]+' '+day.getDate()+' '+months2[day.getMonth()]):(dnames2[day.getDay()]+' '+day.getDate()+' '+months2[day.getMonth()]);
-    if(!acc.length&&i>0)continue;
-    agHtml+='<div class="dblock"><div class="dlbl'+(i===0?' today':'')+'">'+lbl+'</div>';
-    if(acc.length){acc.forEach(function(c){agHtml+='<div class="aitem" data-action="sd" data-id="'+c.key_app+'"><div class="adot acc"></div><div><div class="aname">'+c.cliente+'</div><div class="asub">'+(c.proxima_accion||'Acci\u00f3n pendiente')+'</div></div></div>';});}
-    else{agHtml+='<div class="aitem"><div class="adot ok"></div><div><div class="aname" style="color:#9A9690">Sin acciones</div></div></div>';}
-    agHtml+='</div>';
-  }
-  document.getElementById('alist').innerHTML=agHtml;
 }
 
 // ============ DETAIL ============
@@ -1048,7 +1126,7 @@ function showDetail(id) {
           fields[key]=val;
           fetch(API+'?action=update&payload='+encodeURIComponent(JSON.stringify({action:'update',id:id,fields:fields})))
             .then(function(r){return r.json();})
-            .then(function(data){ if(!data.success) showToast('Error al guardar'); })
+            .then(function(data){ if(!data.success) showToast('Error al guardar'); else { markLazyViewsDirty(); setTimeout(function(){ loadData(true); }, 250); } })
             .catch(function(){ showToast('Error de conexión'); });
         }
 
@@ -1209,11 +1287,11 @@ function saveForm(newMode, tecState) {
           closeEdit();
           if(IS_DESKTOP && currentId && !newMode){
             // Reload data then re-show detail
-            loadData();
+            loadData(true);
             setTimeout(function(){ showDetail(currentId); }, 600);
           } else {
             if(!newMode) document.getElementById('dv').classList.remove('open');
-            setTimeout(function(){loadData();},800);
+            setTimeout(function(){loadData(true);},200);
           }
         }, 700);
       } else {
@@ -1229,7 +1307,7 @@ function deleteAccount() {
   fetch(API+'?action=delete&payload='+encodeURIComponent(JSON.stringify({id:currentId})))
     .then(function(r){return r.json();})
     .then(function(data){
-      if(data.success){showToast('Cuenta eliminada');closeEdit();document.getElementById('dv').classList.remove('open');setTimeout(function(){loadData();},800);}
+      if(data.success){showToast('Cuenta eliminada');closeEdit();document.getElementById('dv').classList.remove('open');setTimeout(function(){loadData(true);},200);}
       else showToast('Error: '+(data.error||''));
     }).catch(function(){showToast('Error de conexi\u00f3n');});
 }
@@ -1263,7 +1341,7 @@ function ST(tab){
   var el=document.querySelector('[data-tab="'+tab+'"]');if(el&&el.classList.contains('tab'))el.classList.add('active');
   document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('active');});
   var nel=document.querySelector('.ni[data-tab="'+tab+'"]');if(nel)nel.classList.add('active');
-  SV('v-'+tab);prevTab=tab;CS(true);
+  SV('v-'+tab);prevTab=tab;renderLazyView(tab);CS(true);
 }
 
 function SF(key,label){
@@ -1275,7 +1353,7 @@ function SF(key,label){
   else if(key.indexOf('tipo_')===0){var tip=key.slice(5);data=CUENTAS.filter(function(c){return c['tipo de cuenta']===tip;});}
   else if(key.indexOf('pri_')===0){var pri=key.slice(4);data=CUENTAS.filter(function(c){return c.Prioridad===pri;});}
   document.getElementById('flbl').textContent=label+' \u00b7 '+data.length+' cuentas';
-  document.getElementById('flist').innerHTML=data.map(RC).join('')||'<div class="empty"><div class="empty-t">Sin resultados</div></div>';
+  renderCardList('flist', data, '<div class="empty"><div class="empty-t">Sin resultados</div></div>');
   SV('v-filtrada');
 }
 
@@ -1297,6 +1375,8 @@ document.addEventListener('click',function(e){
   while(el&&el!==document){
     var a=el.dataset.action;
     if(a){
+      if(a==='more-list'){var lid=el.dataset.list;if(LISTS[lid]){LISTS[lid].shown+=50;renderCardListPage(lid);}return;}
+      if(a==='render-all-tec'){var s=LISTS['tlist_tecnico_html'];if(s){s.shown=s.data.length;document.getElementById('tlist').innerHTML=s.data.join('');}return;}
       if(a==='sd'){showDetail(el.dataset.id);return;}
       if(a==='sd-dash'){
         // From dashboard — open panel then show detail
@@ -1612,17 +1692,23 @@ initLayout();
 loadData();
 loadPBI();
 
-// Auto-refresh every 5 minutes
+// Auto-refresh inteligente: solo refresca si la app está visible
 setInterval(function(){
-  loadData();
+  if(document.hidden) return;
+  loadData(false);
   loadPBI();
 }, 5 * 60 * 1000);
+
+// Al volver a la app, refresca en segundo plano
+window.addEventListener('visibilitychange', function(){
+  if(!document.hidden){ loadData(false); loadPBI(); }
+});
 
 // Manual refresh button
 document.getElementById('refresh-btn').addEventListener('click', function(){
   var btn = document.getElementById('refresh-btn');
   btn.classList.add('spinning');
-  loadData();
+  loadData(true);
   loadPBI();
   setTimeout(function(){ btn.classList.remove('spinning'); }, 1500);
 });
