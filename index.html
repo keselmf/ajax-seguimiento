@@ -657,105 +657,135 @@ function RC(c) {
 
 function FLD(l,v,cls) { return '<div class="field"><div class="fl">'+l+'</div><div class="fv'+(cls?' '+cls:'')+'" >'+v+'</div></div>'; }
 
-function loadPBI() {
+
+function renderPBI(d) {
+  if (!d) return;
   try {
-    var cachedPBI = localStorage.getItem('ajax_pbi');
-    if(cachedPBI && document.getElementById('pbi-upd').textContent === 'Cargando...') {
-      var cp = JSON.parse(cachedPBI);
-      if(cp && cp.actualizado){ var cd=new Date(cp.actualizado); document.getElementById('pbi-upd').textContent='Actualizado '+cd.getDate()+'/'+(cd.getMonth()+1)+'/'+cd.getFullYear(); }
+    try { localStorage.setItem('ajax_pbi', JSON.stringify(d)); } catch(e){}
+          var fmt = function(v) {
+            if (!v && v!==0) return '$0';
+            var n = Number(v);
+            if (isNaN(n)) return v;
+            if (n >= 1000000) return '$'+(n/1000000).toFixed(1)+'M';
+            if (n >= 1000) return '$'+Math.round(n/1000)+'K';
+            return '$'+Math.round(n);
+          };
+          var pct = function(v) { return v ? Math.round(Number(v))+'%' : '0%'; };
+          var pctClass = function(v) { var n=Number(v); return n>=100?'over':n>0?'under':'zero'; };
+          var upd = d['actualizado'] || '';
+          if (upd && String(upd).indexOf('T') > -1) { var dd=new Date(upd); upd=dd.getDate()+'/'+(dd.getMonth()+1)+'/'+dd.getFullYear(); }
+          document.getElementById('pbi-upd').textContent = upd ? 'Actualizado '+upd : '';
+          var fact = Number(d['fact']||0);
+          var target = Number(d['target']||0);
+          var pctAnual = target ? Math.round(fact/target*100) : 0;
+          var pctColor = pctAnual>=100?'green':pctAnual>=70?'amber':'red';
+          var progColor = pctAnual>=100?'#1D9E75':pctAnual>=70?'#BA7517':'#E24B4A';
+          var quarters = [
+            {k:'q1',l:'Q1 2026',cls:Number(d['q1']||0)>0&&Number(d['q1_pct_real']||0)>0?'done':'future'},
+            {k:'q2',l:'Q2 2026',cls:'current'},
+            {k:'q3',l:'Q3 2026',cls:'future'},
+            {k:'q4',l:'Q4 2026',cls:'future'}
+          ];
+          // Detect current quarter
+          var now = new Date(); var mo = now.getMonth()+1;
+          var curQ = mo<=3?'q1':mo<=6?'q2':mo<=9?'q3':'q4';
+          quarters.forEach(function(q){
+            if(q.k===curQ) q.cls='current';
+            else if(q.k<curQ&&Number(d[q.k+'_pct_real']||0)>0) q.cls='done';
+          });
+          var qHtml = quarters.map(function(q){
+            var rev = d[q.k]||0;
+            var tgt = d[q.k+'_target']||0;
+            var pr = d[q.k+'_pct_real']||0;
+            var po = d[q.k+'_pct_overperf']||0;
+            var barW = Math.min(Math.round(Number(pr)),100);
+            var barColor = q.cls==='done'?'#1D9E75':q.cls==='current'?'#185FA5':'#9A9690';
+            return '<div class="pbi-qcard '+q.cls+'">'
+              +'<div class="pbi-ql '+q.cls+'">'+q.l+(q.cls==='done'?' ✓':q.cls==='current'?' ●':'')+'</div>'
+              +'<div class="pbi-qrev" style="color:'+(q.cls==='done'?'#3B6D11':q.cls==='current'?'#185FA5':'#9A9690')+'">'+fmt(rev)+'</div>'
+              +'<div class="pbi-qtgt">Target: '+fmt(tgt)+'</div>'
+              +'<div class="pbi-qbadges">'
+              +'<span class="pbi-qpct '+pctClass(pr)+'">'+pct(pr)+' real</span>'
+              +(po&&po!=pr?'<span class="pbi-qpct '+pctClass(po)+'">'+pct(po)+'</span>':'')
+              +'</div>'
+              +'<div class="pbi-qbar"><div class="pbi-qbar-fill" style="width:'+barW+'%;background:'+barColor+'"></div></div>'
+              +'</div>';
+          }).join('');
+          var pbiHtml =
+            '<div class="pbi-annual">'
+            +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(fact)+'</div></div>'
+            +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(target)+'</div></div>'
+            +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
+            +'</div>'
+            +'<div class="pbi-progress-wrap">'
+            +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
+            +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
+            +'</div>'
+            +'<div class="pbi-q-title">Por trimestre</div>'
+            +'<div class="pbi-qgrid">'+qHtml+'</div>';
+          document.getElementById('pbi-body').innerHTML = pbiHtml;
+    
+          // Update desktop PBI - split layout
+          var pbiD = document.getElementById('pbi-body-d');
+          var pbiUpdD = document.getElementById('pbi-upd-d');
+          var pbiAnnD = document.getElementById('pbi-annual-d');
+          if (pbiUpdD) pbiUpdD.textContent = upd ? 'Actualizado '+upd : '';
+          if (pbiAnnD) pbiAnnD.innerHTML =
+            '<div class="pbi-annual">'
+            +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(fact)+'</div></div>'
+            +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(target)+'</div></div>'
+            +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
+            +'</div>'
+            +'<div class="pbi-progress-wrap" style="margin-top:8px">'
+            +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
+            +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
+            +'</div>';
+          if (pbiD) pbiD.innerHTML =
+            '<div class="pbi-q-title">Por trimestre</div>'
+            +'<div class="pbi-qgrid">'+qHtml+'</div>';
+  } catch(e) {
+    console.log('PBI render error:', e);
+  }
+}
+
+function loadPBICache() {
+  try {
+    var cached = localStorage.getItem('ajax_pbi');
+    if (cached) {
+      renderPBI(JSON.parse(cached));
+      return true;
     }
-  } catch(e){}
+  } catch(e) {}
+  return false;
+}
+
+function loadPBI() {
+  loadPBICache();
+
+  var u1 = document.getElementById('pbi-upd');
+  var u2 = document.getElementById('pbi-upd-d');
+  if (u1 && !u1.textContent) u1.textContent = 'Actualizando...';
+  if (u2 && !u2.textContent) u2.textContent = 'Actualizando...';
+
   fetch(API + '?action=getPBI&_ts=' + Date.now(), { cache: 'no-store' })
     .then(function(r){return r.json();})
     .then(function(data){
       if (!data.success) { console.log('PBI no success', data); return; }
       console.log('PBI refresh OK', new Date().toLocaleTimeString(), data);
-      var d = data.data;
-      try { localStorage.setItem('ajax_pbi', JSON.stringify(d)); } catch(e){}
-      var fmt = function(v) {
-        if (!v && v!==0) return '$0';
-        var n = Number(v);
-        if (isNaN(n)) return v;
-        if (n >= 1000000) return '$'+(n/1000000).toFixed(1)+'M';
-        if (n >= 1000) return '$'+Math.round(n/1000)+'K';
-        return '$'+Math.round(n);
-      };
-      var pct = function(v) { return v ? Math.round(Number(v))+'%' : '0%'; };
-      var pctClass = function(v) { var n=Number(v); return n>=100?'over':n>0?'under':'zero'; };
-      var upd = d['actualizado'] || '';
-      if (upd && String(upd).indexOf('T') > -1) { var dd=new Date(upd); upd=dd.getDate()+'/'+(dd.getMonth()+1)+'/'+dd.getFullYear(); }
-      document.getElementById('pbi-upd').textContent = upd ? 'Actualizado '+upd : '';
-      var fact = Number(d['fact']||0);
-      var target = Number(d['target']||0);
-      var pctAnual = target ? Math.round(fact/target*100) : 0;
-      var pctColor = pctAnual>=100?'green':pctAnual>=70?'amber':'red';
-      var progColor = pctAnual>=100?'#1D9E75':pctAnual>=70?'#BA7517':'#E24B4A';
-      var quarters = [
-        {k:'q1',l:'Q1 2026',cls:Number(d['q1']||0)>0&&Number(d['q1_pct_real']||0)>0?'done':'future'},
-        {k:'q2',l:'Q2 2026',cls:'current'},
-        {k:'q3',l:'Q3 2026',cls:'future'},
-        {k:'q4',l:'Q4 2026',cls:'future'}
-      ];
-      // Detect current quarter
-      var now = new Date(); var mo = now.getMonth()+1;
-      var curQ = mo<=3?'q1':mo<=6?'q2':mo<=9?'q3':'q4';
-      quarters.forEach(function(q){
-        if(q.k===curQ) q.cls='current';
-        else if(q.k<curQ&&Number(d[q.k+'_pct_real']||0)>0) q.cls='done';
-      });
-      var qHtml = quarters.map(function(q){
-        var rev = d[q.k]||0;
-        var tgt = d[q.k+'_target']||0;
-        var pr = d[q.k+'_pct_real']||0;
-        var po = d[q.k+'_pct_overperf']||0;
-        var barW = Math.min(Math.round(Number(pr)),100);
-        var barColor = q.cls==='done'?'#1D9E75':q.cls==='current'?'#185FA5':'#9A9690';
-        return '<div class="pbi-qcard '+q.cls+'">'
-          +'<div class="pbi-ql '+q.cls+'">'+q.l+(q.cls==='done'?' ✓':q.cls==='current'?' ●':'')+'</div>'
-          +'<div class="pbi-qrev" style="color:'+(q.cls==='done'?'#3B6D11':q.cls==='current'?'#185FA5':'#9A9690')+'">'+fmt(rev)+'</div>'
-          +'<div class="pbi-qtgt">Target: '+fmt(tgt)+'</div>'
-          +'<div class="pbi-qbadges">'
-          +'<span class="pbi-qpct '+pctClass(pr)+'">'+pct(pr)+' real</span>'
-          +(po&&po!=pr?'<span class="pbi-qpct '+pctClass(po)+'">'+pct(po)+'</span>':'')
-          +'</div>'
-          +'<div class="pbi-qbar"><div class="pbi-qbar-fill" style="width:'+barW+'%;background:'+barColor+'"></div></div>'
-          +'</div>';
-      }).join('');
-      var pbiHtml =
-        '<div class="pbi-annual">'
-        +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(fact)+'</div></div>'
-        +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(target)+'</div></div>'
-        +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
-        +'</div>'
-        +'<div class="pbi-progress-wrap">'
-        +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
-        +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
-        +'</div>'
-        +'<div class="pbi-q-title">Por trimestre</div>'
-        +'<div class="pbi-qgrid">'+qHtml+'</div>';
-      document.getElementById('pbi-body').innerHTML = pbiHtml;
 
-      // Update desktop PBI - split layout
-      var pbiD = document.getElementById('pbi-body-d');
-      var pbiUpdD = document.getElementById('pbi-upd-d');
-      var pbiAnnD = document.getElementById('pbi-annual-d');
-      if (pbiUpdD) pbiUpdD.textContent = upd ? 'Actualizado '+upd : '';
-      if (pbiAnnD) pbiAnnD.innerHTML =
-        '<div class="pbi-annual">'
-        +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(fact)+'</div></div>'
-        +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(target)+'</div></div>'
-        +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
-        +'</div>'
-        +'<div class="pbi-progress-wrap" style="margin-top:8px">'
-        +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
-        +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
-        +'</div>';
-      if (pbiD) pbiD.innerHTML =
-        '<div class="pbi-q-title">Por trimestre</div>'
-        +'<div class="pbi-qgrid">'+qHtml+'</div>';
+      var fresh = data.data;
+      var freshStr = JSON.stringify(fresh);
+      var oldStr = null;
+      try { oldStr = localStorage.getItem('ajax_pbi'); } catch(e) {}
+
+      try { localStorage.setItem('ajax_pbi', freshStr); } catch(e) {}
+
+      if (oldStr === freshStr) return;
+      renderPBI(fresh);
     })
     .catch(function(e){ console.log('PBI load error:', e); });
 }
+
 
 
 function loadData(force) {
