@@ -747,14 +747,31 @@ function loadPBI() {
 
 
 function loadData() {
+  // Mostrar datos cacheados instantaneamente si existen
+  try {
+    var cached = localStorage.getItem('ajax_cuentas');
+    if(cached) {
+      var cachedData = JSON.parse(cached);
+      if(cachedData && cachedData.length) {
+        CUENTAS = cachedData.filter(function(c){return c.key_app && c.cliente;});
+        document.getElementById('load-todas').style.display='none';
+        document.getElementById('todas-content').style.display='block';
+        renderAll();
+        if(IS_DESKTOP) renderDesktopMetrics();
+      }
+    }
+  } catch(e){}
+
+  // Siempre fetch datos frescos en background
   fetch(API+'?action=get')
     .then(function(r){return r.json();})
     .then(function(data){
       if (!data.success) { showToast('Error cargando datos'); return; }
       CUENTAS = data.data.filter(function(c){return c.key_app && c.cliente;});
+      // Guardar en cache para proxima apertura
+      try { localStorage.setItem('ajax_cuentas', JSON.stringify(data.data)); } catch(e){}
       document.getElementById('load-todas').style.display='none';
       document.getElementById('todas-content').style.display='block';
-      // Update last-updated in header
       var now = new Date();
       var hdrUpd = document.getElementById('hdr-upd');
       if(hdrUpd){
