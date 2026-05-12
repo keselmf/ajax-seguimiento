@@ -1115,9 +1115,22 @@ function showDetail(id) {
       +IFT('Próxima acción','proxima_accion',c.proxima_accion)
       +IFD('Fecha','fecha_proxima_accion',c.fecha_proxima_accion)
       +'</div>'
+      +'<div class="ifield" id="dd-tec-toggle-wrap" style="margin-bottom:8px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">'
+      +'<div>'
+      +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Seguimiento técnico</div>'
+      +'<div style="font-size:14px;color:#1A1916" id="dd-tec-status">'+(tec?'Activo':'Inactivo')+'</div>'
+      +'</div>'
+      +'<div class="edit-toggle" id="dd-tec-toggle" style="margin-left:0;cursor:'+(IS_READONLY?'default':'pointer')+'">'
+      +'<div class="toggle-track'+(tec?' on':'')+'" id="dd-tec-track"><div class="toggle-thumb"></div></div>'
+      +'</div>'
+      +'</div>'
+      +'</div>'
+      +'<div id="dd-tec-fields" style="'+(tec?'':'display:none;')+'">'
       +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">'
-      +IFT('Seguimiento técnico','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])
+      +IFT('Acción técnica','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])
       +IFD('Fecha técnica','fecha_proxima_accion_tecnica',c.fecha_proxima_accion_tecnica)
+      +'</div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFT('Contacto principal','contacto principal',c['contacto principal'])
@@ -1137,6 +1150,41 @@ function showDetail(id) {
     document.getElementById('dd-back-btn').addEventListener('click', function(){
       renderDDPanel(currentDDFilter);
     });
+
+    // Desktop technical follow-up toggle
+    if(!IS_READONLY){
+      var ddTecState = tec;
+      var ddTecToggle = document.getElementById('dd-tec-toggle');
+      var ddTecTrack = document.getElementById('dd-tec-track');
+      var ddTecFields = document.getElementById('dd-tec-fields');
+      var ddTecStatus = document.getElementById('dd-tec-status');
+      var ddTecWrap = document.getElementById('dd-tec-toggle-wrap');
+
+      if(ddTecToggle){
+        ddTecToggle.addEventListener('click', function(){
+          ddTecState = !ddTecState;
+          if(ddTecTrack) ddTecTrack.classList.toggle('on', ddTecState);
+          if(ddTecFields) ddTecFields.style.display = ddTecState ? '' : 'none';
+          if(ddTecStatus) ddTecStatus.textContent = ddTecState ? 'Activo' : 'Inactivo';
+
+          for(var i=0;i<CUENTAS.length;i++){
+            if(CUENTAS[i].key_app===id){ CUENTAS[i]['seguimiento tecnico'] = ddTecState ? 'si' : ''; break; }
+          }
+
+          if(ddTecWrap){
+            ddTecWrap.style.background='#EAF3DE';
+            ddTecWrap.style.borderColor='#1D9E75';
+            setTimeout(function(){ ddTecWrap.style.background=''; ddTecWrap.style.borderColor=''; }, 1000);
+          }
+
+          var fields = {'seguimiento tecnico': ddTecState ? 'si' : ''};
+          fetch(API+'?action=update&payload='+encodeURIComponent(JSON.stringify({action:'update',id:id,fields:fields})))
+            .then(function(r){return r.json();})
+            .then(function(data){ if(!data.success) showToast('Error al guardar'); else { markLazyViewsDirty(); setTimeout(function(){ loadData(true); }, 250); } })
+            .catch(function(){ showToast('Error de conexión'); });
+        });
+      }
+    }
 
     // Wire inline save on blur/change for each field
     if(!IS_READONLY){
