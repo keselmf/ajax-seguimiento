@@ -624,6 +624,14 @@ function PL(c) { return (c.Prioridad||'').startsWith('1')?'Alta':(c.Prioridad||'
 function BE(e) { var m={Activo:'bac',Prospecto:'bp'}; m['En riesgo']='br'; m['En negociaci\u00f3n']='bn'; m['Cerrado']='bc'; return m[e]||'bc'; }
 function BP(c) { var p=PL(c); return p==='Alta'?'ba':p==='Media'?'bm':'bb'; }
 function TS(t) { return (t||'').indexOf('Mayorista')>-1?'Inst/Mon':(t||t); }
+
+function TC(t){
+  t = String(t || '').trim().toLowerCase();
+  if(t === 'nuevo') return 'Nuevo';
+  if(t === 'actual') return 'Actual';
+  return t ? (t.charAt(0).toUpperCase() + t.slice(1)) : '';
+}
+
 function headColor(c) {
   var ov = isOverdue(c);
   if (ov) return 'red';
