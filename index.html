@@ -663,6 +663,34 @@ function RC(c) {
     +'</div></div></div>';
 }
 
+
+function RCD(c) {
+  var ov = isOverdue(c);
+  var dias = daysOverdue(c);
+  var ds = ov&&dias>0 ? dias+'d vencida' : fmtDate(c.fecha_proxima_accion)||'Sin fecha';
+  var hc = headColor(c);
+  var tec = (c['seguimiento tecnico']||'').toLowerCase()==='si';
+  var tecAction = c['Accion de seguimiento tecnico'] || c['accion de seguimiento tecnico'] || '';
+  var id = c.key_app || c.id || '';
+  return '<div class="card" data-action="sd" data-id="'+id+'">'
+    +'<div class="card-head '+hc+'">'
+    +'<span class="card-hname '+hc+'">'+(c.cliente||'Sin nombre')+'</span>'
+    +'<div class="card-hsem" style="background:'+(hc==='red'?'#E24B4A':hc==='green'?'#1D9E75':'#BBBAB7')+'"></div>'
+    +'</div>'
+    +'<div class="card-body">'
+    +'<div class="card-meta">'+TS(c['tipo de cuenta'])+(c.Distri?' &middot; '+c.Distri:'')+'</div>'
+    +(tec && tecAction ? '<div class="ttag" style="margin-top:0;margin-bottom:8px">Técnico: '+tecAction+'</div>' : '')
+    +(!tec && c.proxima_accion ? '<div class="card-action">'+c.proxima_accion+'</div>' : '')
+    +(tec && !tecAction && c.proxima_accion ? '<div class="card-action">'+c.proxima_accion+'</div>' : '')
+    +'<div class="card-foot">'
+    +'<span class="badge '+BP(c)+'">'+PL(c)+'</span>'
+    +'<span class="badge '+BE(c.estado)+'">'+c.estado+'</span>'
+    +(tec?'<span class="badge bt">Téc</span>':'')
+    +(tec && c.fecha_proxima_accion_tecnica ? '<span class="cdate">'+fmtDate(c.fecha_proxima_accion_tecnica)+'</span>' : '<span class="cdate'+(ov?' ov':'')+'" >'+ds+'</span>')
+    +'</div></div></div>';
+}
+
+
 function FLD(l,v,cls) { return '<div class="field"><div class="fl">'+l+'</div><div class="fv'+(cls?' '+cls:'')+'" >'+v+'</div></div>'; }
 
 
@@ -1630,7 +1658,7 @@ function renderDDPanel(filter) {
   document.getElementById('dd-panel-title').textContent = filter.label;
   document.getElementById('dd-panel-content').innerHTML =
     '<div style="font-size:12px;color:#9A9690;margin-bottom:10px">'+data.length+' cuentas</div>'
-    + data.map(RC).join('') || '<div class="empty"><div class="empty-t">Sin cuentas</div></div>';
+    + (data.length ? data.map(RCD).join('') : '<div class="empty"><div class="empty-t">Sin cuentas</div></div>');
 }
 
 // Click fondo del modal para cerrar
