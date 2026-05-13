@@ -632,6 +632,11 @@ function TC(t){
   return t ? (t.charAt(0).toUpperCase() + t.slice(1)) : '';
 }
 
+
+function tipoClienteValue(c){
+  return TC((c && (c['Tipo de Cliente'] || c['tipo de cliente'] || c['tipo cliente'] || c.tipo_cliente)) || '');
+}
+
 function headColor(c) {
   var ov = isOverdue(c);
   if (ov) return 'red';
@@ -1291,7 +1296,7 @@ function buildEditForm(c, newMode) {
     +'<div class="edit-block">'
     +'<div class="edit-row"><span class="edit-lbl">Cliente</span><input class="edit-val" name="cliente" placeholder="Nombre" value="'+(c?c.cliente||'':'')+'"></div>'
     +'<div class="edit-row"><span class="edit-lbl">Tipo de cuenta</span>'+sel('tipo de cuenta',['Monitoreo','Integrador','Instalador','Instalador/Monitoreo Mayorista','Distri'],c?c['tipo de cuenta']||'':'')+'</div>'
-    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel('Tipo de Cliente',['actual','nuevo',''],c?c['Tipo de Cliente']||'':'')+'</div>'
+    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel('Tipo de Cliente',['actual','nuevo',''],c?tipoClienteValue(c):'')+'</div>'
     +'<div class="edit-row"><span class="edit-lbl">Distribuidor</span><input class="edit-val" name="Distri" placeholder="Opcional" value="'+(c?c.Distri||'':'')+'"></div>'
     +'</div>'
 
