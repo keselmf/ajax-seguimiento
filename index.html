@@ -1831,6 +1831,43 @@ document.getElementById('refresh-btn').addEventListener('click', function(){
   loadPBI();
   setTimeout(function(){ btn.classList.remove('spinning'); }, 1500);
 });
+
+// FIX: top-right edit save button should trigger the actual save action
+(function(){
+  function wireTopEditSave(){
+    var topBtn = document.getElementById('edit-save-btn');
+    if(!topBtn || topBtn.dataset.wiredSave === '1') return;
+    topBtn.dataset.wiredSave = '1';
+    topBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+
+      var bottomBtn = document.querySelector('#edit-body .btn-save, .btn-save');
+      if(bottomBtn){
+        bottomBtn.click();
+        return;
+      }
+
+      if(typeof saveEdit === 'function'){
+        saveEdit();
+        return;
+      }
+      if(typeof saveCurrent === 'function'){
+        saveCurrent();
+        return;
+      }
+      if(typeof saveAccount === 'function'){
+        saveAccount();
+        return;
+      }
+      console.log('No save handler found for edit-save-btn');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', wireTopEditSave);
+  setTimeout(wireTopEditSave, 300);
+  setTimeout(wireTopEditSave, 1000);
+})();
+
 </script>
 </body>
 </html>
