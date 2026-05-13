@@ -1167,7 +1167,7 @@ function showDetail(id) {
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFT('Contacto principal','contacto principal',c['contacto principal'])
-      +IFS('Tipo de cliente','Tipo de Cliente',c['Tipo de Cliente'],['actual','nuevo'])
+      +IFS('Tipo de cliente','Tipo de Cliente',c['Tipo de Cliente'],['Actual','Nuevo'])
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFS('Estado','estado',c.estado,['Activo','Prospecto','En negociación','En riesgo','Cerrado'])
@@ -1296,7 +1296,7 @@ function buildEditForm(c, newMode) {
     +'<div class="edit-block">'
     +'<div class="edit-row"><span class="edit-lbl">Cliente</span><input class="edit-val" name="cliente" placeholder="Nombre" value="'+(c?c.cliente||'':'')+'"></div>'
     +'<div class="edit-row"><span class="edit-lbl">Tipo de cuenta</span>'+sel('tipo de cuenta',['Monitoreo','Integrador','Instalador','Instalador/Monitoreo Mayorista','Distri'],c?c['tipo de cuenta']||'':'')+'</div>'
-    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel('Tipo de Cliente',['actual','nuevo',''],c?tipoClienteValue(c):'')+'</div>'
+    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel('Tipo de Cliente',['Actual','Nuevo',''],c?tipoClienteValue(c):'')+'</div>'
     +'<div class="edit-row"><span class="edit-lbl">Distribuidor</span><input class="edit-val" name="Distri" placeholder="Opcional" value="'+(c?c.Distri||'':'')+'"></div>'
     +'</div>'
 
