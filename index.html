@@ -575,16 +575,16 @@ if('serviceWorker' in navigator){
 var API = 'https://script.google.com/macros/s/AKfycbwljgsU-e18AqjlNzsqvN_oMmP8r5bq3z16EDo8XYcpFA1OkFguEfWtBrdYO8tVUAxc/exec';
 
 // ============ SECURITY — definir PRIMERO ============
-var SECRET_TOKEN = 'Ajax-gAGxBzFe0QbCDEriw1H8FALJ';
+var SECRET_TOKEN = 'Jqi-n3-DeaWBwG2savrvJg';
 var IS_READONLY = (function(){
   var params = new URLSearchParams(window.location.search);
   var urlToken = params.get('token');
   if(urlToken === SECRET_TOKEN){
-    try { localStorage.setItem('ajax_token_v2', SECRET_TOKEN); } catch(e){}
+    try { localStorage.setItem('ajax_token', SECRET_TOKEN); } catch(e){}
     return false;
   }
   try {
-    return localStorage.getItem('ajax_token_v2') !== SECRET_TOKEN;
+    return localStorage.getItem('ajax_token') !== SECRET_TOKEN;
   } catch(e){ return true; }
 })();
 var CUENTAS = [];
@@ -592,10 +592,6 @@ var TODAY = new Date(); TODAY.setHours(0,0,0,0);
 var prevTab = 'todas';
 var currentId = null;
 var isNew = false;
-var LAST_DATA_SIG = '';
-var DATA_LOADED_ONCE = false;
-var LAZY_VIEWS_DIRTY = {vencidas:true,hoy:true,tecnico:true,agenda:true};
-var LISTS = {};
 
 // ============ DATE HELPERS ============
 function parseDate(s) {
@@ -624,19 +620,6 @@ function PL(c) { return (c.Prioridad||'').startsWith('1')?'Alta':(c.Prioridad||'
 function BE(e) { var m={Activo:'bac',Prospecto:'bp'}; m['En riesgo']='br'; m['En negociaci\u00f3n']='bn'; m['Cerrado']='bc'; return m[e]||'bc'; }
 function BP(c) { var p=PL(c); return p==='Alta'?'ba':p==='Media'?'bm':'bb'; }
 function TS(t) { return (t||'').indexOf('Mayorista')>-1?'Inst/Mon':(t||t); }
-
-function TC(t){
-  t = String(t || '').trim().toLowerCase();
-  if(t === 'nuevo') return 'Nuevo';
-  if(t === 'actual') return 'Actual';
-  return t ? (t.charAt(0).toUpperCase() + t.slice(1)) : '';
-}
-
-
-function tipoClienteValue(c){
-  return TC((c && (c['Tipo de Cliente'] || c['tipo de cliente'] || c['tipo cliente'] || c.tipo_cliente)) || '');
-}
-
 function headColor(c) {
   var ov = isOverdue(c);
   if (ov) return 'red';
@@ -668,204 +651,190 @@ function RC(c) {
     +'</div></div></div>';
 }
 
-
-function RCD(c) {
-  var ov = isOverdue(c);
-  var dias = daysOverdue(c);
-  var ds = ov&&dias>0 ? dias+'d vencida' : fmtDate(c.fecha_proxima_accion)||'Sin fecha';
-  var hc = headColor(c);
-  var tec = (c['seguimiento tecnico']||'').toLowerCase()==='si';
-  var tecAction = c['Accion de seguimiento tecnico'] || c['accion de seguimiento tecnico'] || '';
-  var id = c.key_app || c.id || '';
-  return '<div class="card" data-action="sd" data-id="'+id+'">'
-    +'<div class="card-head '+hc+'">'
-    +'<span class="card-hname '+hc+'">'+(c.cliente||'Sin nombre')+'</span>'
-    +'<div class="card-hsem" style="background:'+(hc==='red'?'#E24B4A':hc==='green'?'#1D9E75':'#BBBAB7')+'"></div>'
-    +'</div>'
-    +'<div class="card-body">'
-    +'<div class="card-meta">'+TS(c['tipo de cuenta'])+(c.Distri?' &middot; '+c.Distri:'')+'</div>'
-    +(tec && tecAction ? '<div class="ttag" style="margin-top:0;margin-bottom:8px">Técnico: '+tecAction+'</div>' : '')
-    +(!tec && c.proxima_accion ? '<div class="card-action">'+c.proxima_accion+'</div>' : '')
-    +(tec && !tecAction && c.proxima_accion ? '<div class="card-action">'+c.proxima_accion+'</div>' : '')
-    +'<div class="card-foot">'
-    +'<span class="badge '+BP(c)+'">'+PL(c)+'</span>'
-    +'<span class="badge '+BE(c.estado)+'">'+c.estado+'</span>'
-    +(tec?'<span class="badge bt">Téc</span>':'')
-    +(tec && c.fecha_proxima_accion_tecnica ? '<span class="cdate">'+fmtDate(c.fecha_proxima_accion_tecnica)+'</span>' : '<span class="cdate'+(ov?' ov':'')+'" >'+ds+'</span>')
-    +'</div></div></div>';
-}
-
-
 function FLD(l,v,cls) { return '<div class="field"><div class="fl">'+l+'</div><div class="fv'+(cls?' '+cls:'')+'" >'+v+'</div></div>'; }
 
-
-function renderPBI(d) {
-  if (!d) return;
-  try {
-    try { localStorage.setItem('ajax_pbi', JSON.stringify(d)); } catch(e){}
-          var fmt = function(v) {
-            if (!v && v!==0) return '$0';
-            var n = Number(v);
-            if (isNaN(n)) return v;
-            if (n >= 1000000) return '$'+(n/1000000).toFixed(1)+'M';
-            if (n >= 1000) return '$'+Math.round(n/1000)+'K';
-            return '$'+Math.round(n);
-          };
-          var pct = function(v) { return v ? Math.round(Number(v))+'%' : '0%'; };
-          var pctClass = function(v) { var n=Number(v); return n>=100?'over':n>0?'under':'zero'; };
-          var upd = d['actualizado'] || '';
-          if (upd && String(upd).indexOf('T') > -1) { var dd=new Date(upd); upd=dd.getDate()+'/'+(dd.getMonth()+1)+'/'+dd.getFullYear(); }
-          document.getElementById('pbi-upd').textContent = upd ? 'Actualizado '+upd : '';
-          var fact = Number(d['fact']||0);
-          var target = Number(d['target']||0);
-          var pctAnual = target ? Math.round(fact/target*100) : 0;
-          var pctColor = pctAnual>=100?'green':pctAnual>=70?'amber':'red';
-          var progColor = pctAnual>=100?'#1D9E75':pctAnual>=70?'#BA7517':'#E24B4A';
-          var quarters = [
-            {k:'q1',l:'Q1 2026',cls:Number(d['q1']||0)>0&&Number(d['q1_pct_real']||0)>0?'done':'future'},
-            {k:'q2',l:'Q2 2026',cls:'current'},
-            {k:'q3',l:'Q3 2026',cls:'future'},
-            {k:'q4',l:'Q4 2026',cls:'future'}
-          ];
-          // Detect current quarter
-          var now = new Date(); var mo = now.getMonth()+1;
-          var curQ = mo<=3?'q1':mo<=6?'q2':mo<=9?'q3':'q4';
-          quarters.forEach(function(q){
-            if(q.k===curQ) q.cls='current';
-            else if(q.k<curQ&&Number(d[q.k+'_pct_real']||0)>0) q.cls='done';
-          });
-          var qHtml = quarters.map(function(q){
-            var rev = d[q.k]||0;
-            var tgt = d[q.k+'_target']||0;
-            var pr = d[q.k+'_pct_real']||0;
-            var po = d[q.k+'_pct_overperf']||0;
-            var barW = Math.min(Math.round(Number(pr)),100);
-            var barColor = q.cls==='done'?'#1D9E75':q.cls==='current'?'#185FA5':'#9A9690';
-            return '<div class="pbi-qcard '+q.cls+'">'
-              +'<div class="pbi-ql '+q.cls+'">'+q.l+(q.cls==='done'?' ✓':q.cls==='current'?' ●':'')+'</div>'
-              +'<div class="pbi-qrev" style="color:'+(q.cls==='done'?'#3B6D11':q.cls==='current'?'#185FA5':'#9A9690')+'">'+fmt(rev)+'</div>'
-              +'<div class="pbi-qtgt">Target: '+fmt(tgt)+'</div>'
-              +'<div class="pbi-qbadges">'
-              +'<span class="pbi-qpct '+pctClass(pr)+'">'+pct(pr)+' real</span>'
-              +(po&&po!=pr?'<span class="pbi-qpct '+pctClass(po)+'">'+pct(po)+'</span>':'')
-              +'</div>'
-              +'<div class="pbi-qbar"><div class="pbi-qbar-fill" style="width:'+barW+'%;background:'+barColor+'"></div></div>'
-              +'</div>';
-          }).join('');
-          var pbiHtml =
-            '<div class="pbi-annual">'
-            +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(fact)+'</div></div>'
-            +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(target)+'</div></div>'
-            +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
-            +'</div>'
-            +'<div class="pbi-progress-wrap">'
-            +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
-            +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
-            +'</div>'
-            +'<div class="pbi-q-title">Por trimestre</div>'
-            +'<div class="pbi-qgrid">'+qHtml+'</div>';
-          document.getElementById('pbi-body').innerHTML = pbiHtml;
-    
-          // Update desktop PBI - split layout
-          var pbiD = document.getElementById('pbi-body-d');
-          var pbiUpdD = document.getElementById('pbi-upd-d');
-          var pbiAnnD = document.getElementById('pbi-annual-d');
-          if (pbiUpdD) pbiUpdD.textContent = upd ? 'Actualizado '+upd : '';
-          if (pbiAnnD) pbiAnnD.innerHTML =
-            '<div class="pbi-annual">'
-            +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(fact)+'</div></div>'
-            +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(target)+'</div></div>'
-            +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
-            +'</div>'
-            +'<div class="pbi-progress-wrap" style="margin-top:8px">'
-            +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
-            +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
-            +'</div>';
-          if (pbiD) pbiD.innerHTML =
-            '<div class="pbi-q-title">Por trimestre</div>'
-            +'<div class="pbi-qgrid">'+qHtml+'</div>';
-  } catch(e) {
-    console.log('PBI render error:', e);
-  }
-}
-
-function loadPBICache() {
-  try {
-    var cached = localStorage.getItem('ajax_pbi');
-    if (cached) {
-      renderPBI(JSON.parse(cached));
-      return true;
-    }
-  } catch(e) {}
-  return false;
-}
-
 function loadPBI() {
-  loadPBICache();
-
-  var u1 = document.getElementById('pbi-upd');
-  var u2 = document.getElementById('pbi-upd-d');
-  if (u1 && !u1.textContent) u1.textContent = 'Actualizando...';
-  if (u2 && !u2.textContent) u2.textContent = 'Actualizando...';
-
   fetch(API + '?action=getPBI&_ts=' + Date.now(), { cache: 'no-store' })
     .then(function(r){return r.json();})
     .then(function(data){
       if (!data.success) { console.log('PBI no success', data); return; }
-      console.log('PBI refresh OK', new Date().toLocaleTimeString(), data);
+      var d = data.data;
+      PBI_DATA = d; // store globally for diario modal
 
-      var fresh = data.data;
-      var freshStr = JSON.stringify(fresh);
-      var oldStr = null;
-      try { oldStr = localStorage.getItem('ajax_pbi'); } catch(e) {}
+      var fmt = function(v) {
+        if (!v && v!==0) return '$0';
+        var n = Number(v);
+        if (isNaN(n)) return v;
+        if (n >= 1000000) return '$'+(n/1000000).toFixed(1)+'M';
+        if (n >= 1000) return '$'+Math.round(n/1000)+'K';
+        return '$'+Math.round(n);
+      };
+      var pct = function(v) { return v ? Math.round(Number(v))+'%' : '0%'; };
+      var pctClass = function(v) { var n=Number(v); return n>=100?'over':n>0?'under':'zero'; };
 
-      try { localStorage.setItem('ajax_pbi', freshStr); } catch(e) {}
+      var upd = d['actualizado'] || '';
+      if (upd && String(upd).indexOf('T') > -1) { var dd=new Date(upd); upd=dd.getDate()+'/'+(dd.getMonth()+1)+'/'+dd.getFullYear(); }
+      document.getElementById('pbi-upd').textContent = upd ? 'Actualizado '+upd : '';
 
-      if (oldStr === freshStr) return;
-      renderPBI(fresh);
+      // Area totals (use area Q1+Q2+Q3+Q4 for annual)
+      var areaFact = Number(d['area_fact_q1']||0)+Number(d['area_fact_q2']||0)+Number(d['area_fact_q3']||0)+Number(d['area_fact_q4']||0);
+      var areaTgt  = Number(d['area_target_q1']||0)+Number(d['area_target_q2']||0)+Number(d['area_target_q3']||0)+Number(d['area_target_q4']||0);
+      var pctAnual = Number(d['pct_anual']||0);
+      var pctColor = pctAnual>=100?'green':pctAnual>=70?'amber':'red';
+      var progColor = pctAnual>=100?'#1D9E75':pctAnual>=70?'#BA7517':'#E24B4A';
+
+      var now = new Date(); var mo = now.getMonth()+1;
+      var curQ = mo<=3?'q1':mo<=6?'q2':mo<=9?'q3':'q4';
+
+      var quarters = [
+        {n:'1',l:'Q1 2026',k:'q1'},
+        {n:'2',l:'Q2 2026',k:'q2'},
+        {n:'3',l:'Q3 2026',k:'q3'},
+        {n:'4',l:'Q4 2026',k:'q4'}
+      ];
+
+      var qHtml = quarters.map(function(q){
+        var fact_a = Number(d['area_fact_'+q.k]||0);
+        var tgt_a  = Number(d['area_target_'+q.k]||0);
+        var pr_a   = Number(d['area_pct_'+q.k]||0);
+        var po_a   = Number(d['area_pct_overperf_'+q.k]||0);
+        var fact_k = Number(d['ka_fact_'+q.k]||0);
+        var tgt_k  = Number(d['ka_target_'+q.k]||0);
+        var pr_k   = Number(d['ka_pct_'+q.k]||0);
+        var po_k   = Number(d['ka_pct_overperf_'+q.k]||0);
+
+        var cls = q.k===curQ?'current':(q.k<curQ&&fact_a>0?'done':'future');
+        var barColor = cls==='done'?'#1D9E75':cls==='current'?'#185FA5':'#9A9690';
+        var hasDaily = (q.k==='q3'||q.k==='q4');
+        var clickAttr = hasDaily ? ' data-diario-q="'+q.n+'" style="cursor:pointer"' : '';
+
+        return '<div class="pbi-qcard '+cls+'"'+clickAttr+'>'
+          +'<div class="pbi-ql '+cls+'">'+q.l+(cls==='done'?' ✓':cls==='current'?' ●':'')+'</div>'
+          +'<div style="font-size:10px;color:#9A9690;margin-top:6px;margin-bottom:2px">AREA</div>'
+          +'<div class="pbi-qrev" style="color:'+(cls==='done'?'#3B6D11':cls==='current'?'#185FA5':'#9A9690')+'">'+fmt(fact_a)+'</div>'
+          +'<div class="pbi-qtgt">Target: '+fmt(tgt_a)+'</div>'
+          +'<div class="pbi-qbadges">'
+          +'<span class="pbi-qpct '+pctClass(pr_a)+'">'+pct(pr_a)+' real</span>'
+          +(po_a&&po_a!=pr_a?'<span class="pbi-qpct '+pctClass(po_a)+'">'+pct(po_a)+' overperf</span>':'')
+          +'</div>'
+          +'<div class="pbi-qbar"><div class="pbi-qbar-fill" style="width:'+Math.min(Math.round(pr_a),100)+'%;background:'+barColor+'"></div></div>'
+          +(tgt_k>0?
+            '<div style="font-size:10px;color:#9A9690;margin-top:8px;margin-bottom:2px">KA</div>'
+            +'<div class="pbi-qrev" style="color:'+(cls==='done'?'#3B6D11':cls==='current'?'#185FA5':'#9A9690')+'">'+fmt(fact_k)+'</div>'
+            +'<div class="pbi-qtgt">Target: '+fmt(tgt_k)+'</div>'
+            +'<div class="pbi-qbadges">'
+            +'<span class="pbi-qpct '+pctClass(pr_k)+'">'+pct(pr_k)+' real</span>'
+            +(po_k&&po_k!=pr_k?'<span class="pbi-qpct '+pctClass(po_k)+'">'+pct(po_k)+' overperf</span>':'')
+            +'</div>'
+          :'')
+          +(hasDaily?'<div style="font-size:10px;color:#185FA5;margin-top:6px">Ver detalle diario →</div>':'')
+          +'</div>';
+      }).join('');
+
+      var pbiHtml =
+        '<div class="pbi-annual">'
+        +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(areaFact)+'</div></div>'
+        +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(areaTgt)+'</div></div>'
+        +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
+        +'</div>'
+        +'<div class="pbi-progress-wrap">'
+        +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
+        +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
+        +'</div>'
+        +'<div class="pbi-q-title">Por trimestre</div>'
+        +'<div class="pbi-qgrid">'+qHtml+'</div>';
+      document.getElementById('pbi-body').innerHTML = pbiHtml;
+
+      // Desktop
+      var pbiD = document.getElementById('pbi-body-d');
+      var pbiUpdD = document.getElementById('pbi-upd-d');
+      var pbiAnnD = document.getElementById('pbi-annual-d');
+      if (pbiUpdD) pbiUpdD.textContent = upd ? 'Actualizado '+upd : '';
+      if (pbiAnnD) pbiAnnD.innerHTML =
+        '<div class="pbi-annual">'
+        +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(areaFact)+'</div></div>'
+        +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(areaTgt)+'</div></div>'
+        +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
+        +'</div>'
+        +'<div class="pbi-progress-wrap" style="margin-top:8px">'
+        +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
+        +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
+        +'</div>';
+      if (pbiD) pbiD.innerHTML =
+        '<div class="pbi-q-title">Por trimestre</div>'
+        +'<div class="pbi-qgrid">'+qHtml+'</div>';
+
+      // Wire Q3/Q4 click for daily table
+      document.querySelectorAll('[data-diario-q]').forEach(function(el){
+        el.addEventListener('click', function(){
+          openDiarioModal(el.dataset.diarioQ);
+        });
+      });
     })
     .catch(function(e){ console.log('PBI load error:', e); });
 }
 
+var PBI_DATA = {};
 
-
-function loadData(force) {
-  // Mostrar datos cacheados instantaneamente si existen
-  try {
-    var cached = localStorage.getItem('ajax_cuentas');
-    if(cached) {
-      var cachedData = JSON.parse(cached);
-      if(cachedData && cachedData.length && !DATA_LOADED_ONCE) {
-        CUENTAS = cachedData.filter(function(c){return c.key_app && c.cliente;});
-        LAST_DATA_SIG = JSON.stringify(cachedData);
-        DATA_LOADED_ONCE = true;
-        markLazyViewsDirty();
-        document.getElementById('load-todas').style.display='none';
-        document.getElementById('todas-content').style.display='block';
-        renderAll();
-        if(IS_DESKTOP) renderDesktopMetrics();
-      }
-    }
-  } catch(e){}
-
-  // Siempre fetch datos frescos en background
-  fetch(API+'?action=get&_ts='+Date.now(), {cache:'no-store'})
+function openDiarioModal(qNum) {
+  fetch(API + '?action=getDiario&_ts=' + Date.now(), { cache: 'no-store' })
     .then(function(r){return r.json();})
     .then(function(data){
       if (!data.success) { showToast('Error cargando datos'); return; }
-      var sig = JSON.stringify(data.data);
-      if(!force && sig === LAST_DATA_SIG && DATA_LOADED_ONCE){
-        updateLastRefreshHeader();
-        return;
+      var rows = data.data || [];
+
+      var fmt = function(v) {
+        var n = Number(v);
+        if (isNaN(n)) return '$0';
+        if (n >= 1000) return '$'+Math.round(n/1000)+'K';
+        return '$'+Math.round(n);
+      };
+
+      var tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:14px">'
+        +'<thead><tr>'
+        +'<th style="text-align:left;padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.1);font-size:11px;color:#9A9690;font-weight:500;text-transform:uppercase">Fecha</th>'
+        +'<th style="text-align:right;padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.1);font-size:11px;color:#9A9690;font-weight:500;text-transform:uppercase">Instalaciones</th>'
+        +'</tr></thead><tbody>';
+
+      var sorted = rows.slice().sort(function(a,b){ return String(b.fecha).localeCompare(String(a.fecha)); });
+      sorted.forEach(function(r){
+        var d = new Date(r.fecha);
+        var label = isNaN(d.getTime()) ? r.fecha : d.getDate()+'-'+(d.toLocaleString('es',{month:'short'}));
+        tableHtml += '<tr>'
+          +'<td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.05);color:#1A1916">'+label+'</td>'
+          +'<td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.05);text-align:right;font-weight:500;color:#185FA5">'+fmt(r.instalaciones)+'</td>'
+          +'</tr>';
+      });
+      tableHtml += '</tbody></table>';
+
+      // Show in modal (desktop) or fullscreen (mobile)
+      if (IS_DESKTOP) {
+        openDDPanel('diario_q'+qNum, 'Instalaciones diarias Q'+qNum, null);
+        document.getElementById('dd-panel-content').innerHTML = tableHtml;
+        document.getElementById('dd-panel-title').textContent = 'Instalaciones diarias Q'+qNum;
+        DD_STATE = 'list';
+      } else {
+        // Mobile: use detail view
+        document.getElementById('dn').textContent = 'Instalaciones Q'+qNum;
+        document.getElementById('db').innerHTML = '';
+        document.getElementById('detail-edit-btn').style.display = 'none';
+        document.getElementById('dbody').innerHTML = '<div style="padding:14px 16px">'+tableHtml+'</div>';
+        document.getElementById('dv').classList.add('open');
       }
-      LAST_DATA_SIG = sig;
-      DATA_LOADED_ONCE = true;
+    })
+    .catch(function(e){ showToast('Error cargando datos'); console.log(e); });
+}
+
+
+function loadData() {
+  fetch(API+'?action=get')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if (!data.success) { showToast('Error cargando datos'); return; }
       CUENTAS = data.data.filter(function(c){return c.key_app && c.cliente;});
-      markLazyViewsDirty();
-      // Guardar en cache para proxima apertura
-      try { localStorage.setItem('ajax_cuentas', JSON.stringify(data.data)); } catch(e){}
       document.getElementById('load-todas').style.display='none';
       document.getElementById('todas-content').style.display='block';
+      // Update last-updated in header
       var now = new Date();
       var hdrUpd = document.getElementById('hdr-upd');
       if(hdrUpd){
@@ -876,100 +845,6 @@ function loadData(force) {
       if (IS_DESKTOP) renderDesktopMetrics();
     })
     .catch(function(e){ showToast('Error de conexi\u00f3n'); console.error(e); });
-}
-
-
-function updateLastRefreshHeader(){
-  var now = new Date();
-  var hdrUpd = document.getElementById('hdr-upd');
-  if(hdrUpd){
-    hdrUpd.textContent = 'Act. '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
-    hdrUpd.style.display = '';
-  }
-}
-
-function markLazyViewsDirty(){
-  LAZY_VIEWS_DIRTY = {vencidas:true,hoy:true,tecnico:true,agenda:true};
-}
-
-function renderCardList(containerId, data, emptyHtml, limit){
-  limit = limit || 50;
-  LISTS[containerId] = {data:data||[], shown:limit, emptyHtml:emptyHtml};
-  renderCardListPage(containerId);
-}
-
-function renderCardListPage(containerId){
-  var state = LISTS[containerId];
-  var el = document.getElementById(containerId);
-  if(!state || !el) return;
-  var data = state.data || [];
-  var html = data.slice(0, state.shown).map(RC).join('') || state.emptyHtml;
-  if(data.length > state.shown){
-    html += '<div class="metric" data-action="more-list" data-list="'+containerId+'" style="text-align:center;margin:10px 0 16px"><div class="ml">Ver más</div><div class="ms">Mostrando '+state.shown+' de '+data.length+'</div></div>';
-  }
-  el.innerHTML = html;
-}
-
-function renderLazyView(tab){
-  if(!tab || tab==='todas' || !LAZY_VIEWS_DIRTY[tab]) return;
-  var vencidas = CUENTAS.filter(isOverdue);
-  var hoy = CUENTAS.filter(isToday);
-  var tec = CUENTAS.filter(function(c){return (c['seguimiento tecnico']||'').toLowerCase()==='si';});
-
-  if(tab==='vencidas'){
-    var vSort=vencidas.filter(function(c){return c.cliente;}).sort(function(a,b){return daysOverdue(b)-daysOverdue(a);});
-    document.getElementById('vt').textContent=vSort.length+' cuentas vencidas';
-    renderCardList('vlist', vSort, '<div class="empty"><div class="empty-t">No hay vencidas</div></div>');
-  }
-
-  if(tab==='hoy'){
-    renderCardList('hlist', hoy, '<div class="empty"><div class="empty-icon">&#9711;</div><div class="empty-t">Sin acciones para hoy</div></div>');
-  }
-
-  if(tab==='tecnico'){
-    var tecData=tec.filter(function(c){return c.cliente;}).sort(function(a,b){
-      var da=parseDate(a.fecha_proxima_accion_tecnica),db=parseDate(b.fecha_proxima_accion_tecnica);
-      if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;
-    });
-    var tecHtmlMain=tecData.map(function(c){
-      var d=parseDate(c.fecha_proxima_accion_tecnica);var dias=d?Math.floor((TODAY-d)/86400000):null;
-      return '<div class="card" data-action="sd" data-id="'+c.key_app+'">'
-        +'<div class="card-head '+(isOverdue(c)?'red':'gray')+'">'
-        +'<span class="card-hname '+(isOverdue(c)?'red':'gray')+'">'+c.cliente+'</span>'
-        +'<div class="card-hsem" style="background:'+(isOverdue(c)?'#E24B4A':'#BBBAB7')+'"></div>'
-        +'</div><div class="card-body">'
-        +'<div class="card-meta">'+TS(c['tipo de cuenta'])+'</div>'
-        +'<div class="ttag">'+(c['Accion de seguimiento tecnico']||'Seguimiento t\u00e9cnico activo')+'</div>'
-        +'<div class="card-foot"><span class="badge '+BP(c)+'">'+PL(c)+'</span>'
-        +(dias!==null?'<span class="cdate'+(dias>0?' ov':'')+'">'+( dias>0?dias+'d vencida':fmtDate(c.fecha_proxima_accion_tecnica))+'</span>':'')
-        +'</div></div></div>';
-    });
-    var tEl=document.getElementById('tlist');
-    if(tEl){
-      var first=tecHtmlMain.slice(0,50).join('')||'<div class="empty"><div class="empty-t">Sin seguimiento t\u00e9cnico</div></div>';
-      if(tecHtmlMain.length>50) first+='<div class="metric" data-action="render-all-tec" style="text-align:center;margin:10px 0 16px"><div class="ml">Ver todos</div><div class="ms">Mostrando 50 de '+tecHtmlMain.length+'</div></div>';
-      tEl.innerHTML=first;
-      LISTS['tlist_tecnico_html']={data:tecHtmlMain, shown:50};
-    }
-  }
-
-  if(tab==='agenda'){
-    var dnames2=['Dom','Lun','Mar','Mi\u00e9','Jue','Vie','S\u00e1b'];
-    var months2=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    var agHtml='';
-    for(var i=0;i<7;i++){
-      var day=new Date(TODAY);day.setDate(day.getDate()+i);
-      var acc=CUENTAS.filter(function(c){var d=parseDate(c.fecha_proxima_accion);return d&&d.getTime()===day.getTime();});
-      var lbl=i===0?('Hoy \u2014 '+dnames2[day.getDay()]+' '+day.getDate()+' '+months2[day.getMonth()]):(dnames2[day.getDay()]+' '+day.getDate()+' '+months2[day.getMonth()]);
-      if(!acc.length&&i>0)continue;
-      agHtml+='<div class="dblock"><div class="dlbl'+(i===0?' today':'')+'">'+lbl+'</div>';
-      if(acc.length){acc.forEach(function(c){agHtml+='<div class="aitem" data-action="sd" data-id="'+c.key_app+'"><div class="adot acc"></div><div><div class="aname">'+c.cliente+'</div><div class="asub">'+(c.proxima_accion||'Acci\u00f3n pendiente')+'</div></div></div>';});}
-      else{agHtml+='<div class="aitem"><div class="adot ok"></div><div><div class="aname" style="color:#9A9690">Sin acciones</div></div></div>';}
-      agHtml+='</div>';
-    }
-    document.getElementById('alist').innerHTML=agHtml;
-  }
-  LAZY_VIEWS_DIRTY[tab]=false;
 }
 
 // ============ RENDER ALL ============
@@ -1069,9 +944,48 @@ function renderAll() {
   // Listado inicial removido para acelerar la pantalla principal.
   // Las cuentas se muestran solo al tocar filtros, métricas, búsqueda o tabs.
 
-  // Las listas de Vencidas/Hoy/Técnico/Agenda se renderizan bajo demanda para acelerar la carga inicial.
-  if(prevTab && prevTab !== 'todas') renderLazyView(prevTab);
+  // Vencidas
+  var vSort=vencidas.filter(function(c){return c.cliente;}).sort(function(a,b){return daysOverdue(b)-daysOverdue(a);});
+  document.getElementById('vt').textContent=vSort.length+' cuentas vencidas';
+  document.getElementById('vlist').innerHTML=vSort.map(RC).join('')||'<div class="empty"><div class="empty-t">No hay vencidas</div></div>';
 
+  // Hoy
+  document.getElementById('hlist').innerHTML=hoy.map(RC).join('')||'<div class="empty"><div class="empty-icon">&#9711;</div><div class="empty-t">Sin acciones para hoy</div></div>';
+
+  // Tecnico
+  var tecHtmlMain=tec.filter(function(c){return c.cliente;}).sort(function(a,b){
+    var da=parseDate(a.fecha_proxima_accion_tecnica),db=parseDate(b.fecha_proxima_accion_tecnica);
+    if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;
+  }).map(function(c){
+    var d=parseDate(c.fecha_proxima_accion_tecnica);var dias=d?Math.floor((TODAY-d)/86400000):null;
+    return '<div class="card" data-action="sd" data-id="'+c.key_app+'">'
+      +'<div class="card-head '+(isOverdue(c)?'red':'gray')+'">'
+      +'<span class="card-hname '+(isOverdue(c)?'red':'gray')+'">'+c.cliente+'</span>'
+      +'<div class="card-hsem" style="background:'+(isOverdue(c)?'#E24B4A':'#BBBAB7')+'"></div>'
+      +'</div><div class="card-body">'
+      +'<div class="card-meta">'+TS(c['tipo de cuenta'])+'</div>'
+      +'<div class="ttag">'+(c['Accion de seguimiento tecnico']||'Seguimiento t\u00e9cnico activo')+'</div>'
+      +'<div class="card-foot"><span class="badge '+BP(c)+'">'+PL(c)+'</span>'
+      +(dias!==null?'<span class="cdate'+(dias>0?' ov':'')+'">'+( dias>0?dias+'d vencida':fmtDate(c.fecha_proxima_accion_tecnica))+'</span>':'')
+      +'</div></div></div>';
+  }).join('');
+  document.getElementById('tlist').innerHTML=tecHtmlMain||'<div class="empty"><div class="empty-t">Sin seguimiento t\u00e9cnico</div></div>';
+
+  // Agenda
+  var dnames2=['Dom','Lun','Mar','Mi\u00e9','Jue','Vie','S\u00e1b'];
+  var months2=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var agHtml='';
+  for(var i=0;i<7;i++){
+    var day=new Date(TODAY);day.setDate(day.getDate()+i);
+    var acc=CUENTAS.filter(function(c){var d=parseDate(c.fecha_proxima_accion);return d&&d.getTime()===day.getTime();});
+    var lbl=i===0?('Hoy \u2014 '+dnames2[day.getDay()]+' '+day.getDate()+' '+months2[day.getMonth()]):(dnames2[day.getDay()]+' '+day.getDate()+' '+months2[day.getMonth()]);
+    if(!acc.length&&i>0)continue;
+    agHtml+='<div class="dblock"><div class="dlbl'+(i===0?' today':'')+'">'+lbl+'</div>';
+    if(acc.length){acc.forEach(function(c){agHtml+='<div class="aitem" data-action="sd" data-id="'+c.key_app+'"><div class="adot acc"></div><div><div class="aname">'+c.cliente+'</div><div class="asub">'+(c.proxima_accion||'Acci\u00f3n pendiente')+'</div></div></div>';});}
+    else{agHtml+='<div class="aitem"><div class="adot ok"></div><div><div class="aname" style="color:#9A9690">Sin acciones</div></div></div>';}
+    agHtml+='</div>';
+  }
+  document.getElementById('alist').innerHTML=agHtml;
 }
 
 // ============ DETAIL ============
@@ -1148,26 +1062,13 @@ function showDetail(id) {
       +IFT('Próxima acción','proxima_accion',c.proxima_accion)
       +IFD('Fecha','fecha_proxima_accion',c.fecha_proxima_accion)
       +'</div>'
-      +'<div class="ifield" id="dd-tec-toggle-wrap" style="margin-bottom:8px">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">'
-      +'<div>'
-      +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Seguimiento técnico</div>'
-      +'<div style="font-size:14px;color:#1A1916" id="dd-tec-status">'+(tec?'Activo':'Inactivo')+'</div>'
-      +'</div>'
-      +'<div class="edit-toggle" id="dd-tec-toggle" style="margin-left:0;cursor:'+(IS_READONLY?'default':'pointer')+'">'
-      +'<div class="toggle-track'+(tec?' on':'')+'" id="dd-tec-track"><div class="toggle-thumb"></div></div>'
-      +'</div>'
-      +'</div>'
-      +'</div>'
-      +'<div id="dd-tec-fields" style="'+(tec?'':'display:none;')+'">'
       +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">'
-      +IFT('Acción técnica','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])
+      +IFT('Seguimiento técnico','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])
       +IFD('Fecha técnica','fecha_proxima_accion_tecnica',c.fecha_proxima_accion_tecnica)
-      +'</div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFT('Contacto principal','contacto principal',c['contacto principal'])
-      +IFS('Tipo de cliente','Tipo de Cliente',c['Tipo de Cliente'],['Actual','Nuevo'])
+      +IFS('Tipo de cliente','Tipo de Cliente',c['Tipo de Cliente'],['actual','nuevo'])
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFS('Estado','estado',c.estado,['Activo','Prospecto','En negociación','En riesgo','Cerrado'])
@@ -1183,41 +1084,6 @@ function showDetail(id) {
     document.getElementById('dd-back-btn').addEventListener('click', function(){
       renderDDPanel(currentDDFilter);
     });
-
-    // Desktop technical follow-up toggle
-    if(!IS_READONLY){
-      var ddTecState = tec;
-      var ddTecToggle = document.getElementById('dd-tec-toggle');
-      var ddTecTrack = document.getElementById('dd-tec-track');
-      var ddTecFields = document.getElementById('dd-tec-fields');
-      var ddTecStatus = document.getElementById('dd-tec-status');
-      var ddTecWrap = document.getElementById('dd-tec-toggle-wrap');
-
-      if(ddTecToggle){
-        ddTecToggle.addEventListener('click', function(){
-          ddTecState = !ddTecState;
-          if(ddTecTrack) ddTecTrack.classList.toggle('on', ddTecState);
-          if(ddTecFields) ddTecFields.style.display = ddTecState ? '' : 'none';
-          if(ddTecStatus) ddTecStatus.textContent = ddTecState ? 'Activo' : 'Inactivo';
-
-          for(var i=0;i<CUENTAS.length;i++){
-            if(CUENTAS[i].key_app===id){ CUENTAS[i]['seguimiento tecnico'] = ddTecState ? 'si' : ''; break; }
-          }
-
-          if(ddTecWrap){
-            ddTecWrap.style.background='#EAF3DE';
-            ddTecWrap.style.borderColor='#1D9E75';
-            setTimeout(function(){ ddTecWrap.style.background=''; ddTecWrap.style.borderColor=''; }, 1000);
-          }
-
-          var fields = {'seguimiento tecnico': ddTecState ? 'si' : ''};
-          fetch(API+'?action=update&payload='+encodeURIComponent(JSON.stringify({action:'update',id:id,fields:fields})))
-            .then(function(r){return r.json();})
-            .then(function(data){ if(!data.success) showToast('Error al guardar'); else { markLazyViewsDirty(); setTimeout(function(){ loadData(true); }, 250); } })
-            .catch(function(){ showToast('Error de conexión'); });
-        });
-      }
-    }
 
     // Wire inline save on blur/change for each field
     if(!IS_READONLY){
@@ -1245,7 +1111,7 @@ function showDetail(id) {
           fields[key]=val;
           fetch(API+'?action=update&payload='+encodeURIComponent(JSON.stringify({action:'update',id:id,fields:fields})))
             .then(function(r){return r.json();})
-            .then(function(data){ if(!data.success) showToast('Error al guardar'); else { markLazyViewsDirty(); setTimeout(function(){ loadData(true); }, 250); } })
+            .then(function(data){ if(!data.success) showToast('Error al guardar'); })
             .catch(function(){ showToast('Error de conexión'); });
         }
 
@@ -1296,7 +1162,7 @@ function buildEditForm(c, newMode) {
     +'<div class="edit-block">'
     +'<div class="edit-row"><span class="edit-lbl">Cliente</span><input class="edit-val" name="cliente" placeholder="Nombre" value="'+(c?c.cliente||'':'')+'"></div>'
     +'<div class="edit-row"><span class="edit-lbl">Tipo de cuenta</span>'+sel('tipo de cuenta',['Monitoreo','Integrador','Instalador','Instalador/Monitoreo Mayorista','Distri'],c?c['tipo de cuenta']||'':'')+'</div>'
-    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel('Tipo de Cliente',['Actual','Nuevo',''],c?tipoClienteValue(c):'')+'</div>'
+    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel('Tipo de Cliente',['actual','nuevo',''],c?c['Tipo de Cliente']||'':'')+'</div>'
     +'<div class="edit-row"><span class="edit-lbl">Distribuidor</span><input class="edit-val" name="Distri" placeholder="Opcional" value="'+(c?c.Distri||'':'')+'"></div>'
     +'</div>'
 
@@ -1406,11 +1272,11 @@ function saveForm(newMode, tecState) {
           closeEdit();
           if(IS_DESKTOP && currentId && !newMode){
             // Reload data then re-show detail
-            loadData(true);
+            loadData();
             setTimeout(function(){ showDetail(currentId); }, 600);
           } else {
             if(!newMode) document.getElementById('dv').classList.remove('open');
-            setTimeout(function(){loadData(true);},200);
+            setTimeout(function(){loadData();},800);
           }
         }, 700);
       } else {
@@ -1426,7 +1292,7 @@ function deleteAccount() {
   fetch(API+'?action=delete&payload='+encodeURIComponent(JSON.stringify({id:currentId})))
     .then(function(r){return r.json();})
     .then(function(data){
-      if(data.success){showToast('Cuenta eliminada');closeEdit();document.getElementById('dv').classList.remove('open');setTimeout(function(){loadData(true);},200);}
+      if(data.success){showToast('Cuenta eliminada');closeEdit();document.getElementById('dv').classList.remove('open');setTimeout(function(){loadData();},800);}
       else showToast('Error: '+(data.error||''));
     }).catch(function(){showToast('Error de conexi\u00f3n');});
 }
@@ -1460,7 +1326,7 @@ function ST(tab){
   var el=document.querySelector('[data-tab="'+tab+'"]');if(el&&el.classList.contains('tab'))el.classList.add('active');
   document.querySelectorAll('.ni').forEach(function(n){n.classList.remove('active');});
   var nel=document.querySelector('.ni[data-tab="'+tab+'"]');if(nel)nel.classList.add('active');
-  SV('v-'+tab);prevTab=tab;renderLazyView(tab);CS(true);
+  SV('v-'+tab);prevTab=tab;CS(true);
 }
 
 function SF(key,label){
@@ -1472,7 +1338,7 @@ function SF(key,label){
   else if(key.indexOf('tipo_')===0){var tip=key.slice(5);data=CUENTAS.filter(function(c){return c['tipo de cuenta']===tip;});}
   else if(key.indexOf('pri_')===0){var pri=key.slice(4);data=CUENTAS.filter(function(c){return c.Prioridad===pri;});}
   document.getElementById('flbl').textContent=label+' \u00b7 '+data.length+' cuentas';
-  renderCardList('flist', data, '<div class="empty"><div class="empty-t">Sin resultados</div></div>');
+  document.getElementById('flist').innerHTML=data.map(RC).join('')||'<div class="empty"><div class="empty-t">Sin resultados</div></div>';
   SV('v-filtrada');
 }
 
@@ -1494,8 +1360,6 @@ document.addEventListener('click',function(e){
   while(el&&el!==document){
     var a=el.dataset.action;
     if(a){
-      if(a==='more-list'){var lid=el.dataset.list;if(LISTS[lid]){LISTS[lid].shown+=50;renderCardListPage(lid);}return;}
-      if(a==='render-all-tec'){var s=LISTS['tlist_tecnico_html'];if(s){s.shown=s.data.length;document.getElementById('tlist').innerHTML=s.data.join('');}return;}
       if(a==='sd'){showDetail(el.dataset.id);return;}
       if(a==='sd-dash'){
         // From dashboard — open panel then show detail
@@ -1663,7 +1527,7 @@ function renderDDPanel(filter) {
   document.getElementById('dd-panel-title').textContent = filter.label;
   document.getElementById('dd-panel-content').innerHTML =
     '<div style="font-size:12px;color:#9A9690;margin-bottom:10px">'+data.length+' cuentas</div>'
-    + (data.length ? data.map(RCD).join('') : '<div class="empty"><div class="empty-t">Sin cuentas</div></div>');
+    + data.map(RC).join('') || '<div class="empty"><div class="empty-t">Sin cuentas</div></div>';
 }
 
 // Click fondo del modal para cerrar
@@ -1811,63 +1675,20 @@ initLayout();
 loadData();
 loadPBI();
 
-// Auto-refresh inteligente: solo refresca si la app está visible
+// Auto-refresh every 5 minutes
 setInterval(function(){
-  if(document.hidden) return;
-  loadData(false);
+  loadData();
   loadPBI();
 }, 5 * 60 * 1000);
-
-// Al volver a la app, refresca en segundo plano
-window.addEventListener('visibilitychange', function(){
-  if(!document.hidden){ loadData(false); loadPBI(); }
-});
 
 // Manual refresh button
 document.getElementById('refresh-btn').addEventListener('click', function(){
   var btn = document.getElementById('refresh-btn');
   btn.classList.add('spinning');
-  loadData(true);
+  loadData();
   loadPBI();
   setTimeout(function(){ btn.classList.remove('spinning'); }, 1500);
 });
-
-// FIX: top-right edit save button should trigger the actual save action
-(function(){
-  function wireTopEditSave(){
-    var topBtn = document.getElementById('edit-save-btn');
-    if(!topBtn || topBtn.dataset.wiredSave === '1') return;
-    topBtn.dataset.wiredSave = '1';
-    topBtn.addEventListener('click', function(e){
-      e.preventDefault();
-      e.stopPropagation();
-
-      var bottomBtn = document.querySelector('#edit-body .btn-save, .btn-save');
-      if(bottomBtn){
-        bottomBtn.click();
-        return;
-      }
-
-      if(typeof saveEdit === 'function'){
-        saveEdit();
-        return;
-      }
-      if(typeof saveCurrent === 'function'){
-        saveCurrent();
-        return;
-      }
-      if(typeof saveAccount === 'function'){
-        saveAccount();
-        return;
-      }
-      console.log('No save handler found for edit-save-btn');
-    });
-  }
-  document.addEventListener('DOMContentLoaded', wireTopEditSave);
-  setTimeout(wireTopEditSave, 300);
-  setTimeout(wireTopEditSave, 1000);
-})();
-
 </script>
 </body>
 </html>
