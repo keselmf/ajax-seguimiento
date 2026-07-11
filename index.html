@@ -671,12 +671,20 @@ function RC(c) {
 
 function FLD(l,v,cls) { return '<div class="field"><div class="fl">'+l+'</div><div class="fv'+(cls?' '+cls:'')+'" >'+v+'</div></div>'; }
 
+var PBI_DATA = {};
+var DIARIO_DATA = [];
+
 function loadPBI() {
-  fetch(API + '?action=getPBI&_ts=' + Date.now(), { cache: 'no-store' })
-    .then(function(r){return r.json();})
-    .then(function(data){
-      if (!data.success) { console.log('PBI no success', data); return; }
-      var d = data.data;
+  Promise.all([
+    fetch(API + '?action=getPBI&_ts=' + Date.now(), { cache: 'no-store' }).then(function(r){return r.json();}),
+    fetch(API + '?action=getDiario&_ts=' + Date.now(), { cache: 'no-store', redirect: 'follow' }).then(function(r){return r.text();}).then(function(t){ try{return JSON.parse(t);}catch(e){return {success:false};} })
+  ])
+  .then(function(results){
+    var pbiResp = results[0];
+    var diarioResp = results[1];
+    if (diarioResp && diarioResp.success) DIARIO_DATA = diarioResp.data || [];
+    if (!pbiResp.success) { console.log('PBI no success', pbiResp); return; }
+    var d = pbiResp.data;
       var fmt = function(v) {
         if (!v && v!==0) return '$0';
         var n = Number(v);
@@ -720,16 +728,6 @@ function loadPBI() {
         var badge = cls==='done'?'<span class="pbi-q-badge done">✓ Cerrado</span>':cls==='current'?'<span class="pbi-q-badge cur">● En curso</span>':'<span class="pbi-q-badge fut">Pendiente</span>';
         var hasDaily = q.k==='q3'||q.k==='q4';
         var clickAttr = hasDaily?' data-diario-q="'+q.n+'" style="cursor:pointer"':'';
-
-        function col(fact, tgt, real, acum, vc, pc) {
-          return '<div class="pbi-q-col-hd">'+vc.replace('done','Area').replace('cur','Area').replace('muted','Area')+'</div>'
-            +'<div class="pbi-q-row"><span class="pbi-q-lbl">Fact</span><span class="pbi-q-val '+vc+'">'+fact+'</span></div>'
-            +'<div class="pbi-q-row"><span class="pbi-q-lbl">Target</span><span class="pbi-q-val muted">'+tgt+'</span></div>'
-            +'<hr class="pbi-q-div">'
-            +'<div class="pbi-q-row"><span class="pbi-q-lbl">Real</span><span class="pbi-q-pct '+pc(real)+'">'+pct(real)+'</span></div>'
-            +'<div class="pbi-q-row"><span class="pbi-q-lbl">Acumulado</span><span class="pbi-q-pct '+pc(acum)+'">'+pct(acum)+'</span></div>';
-        }
-
         return '<div class="pbi-qcard '+cls+'"'+clickAttr+'>'
           +'<div class="pbi-q-title-row"><span>'+q.l+'</span>'+badge+'</div>'
           +'<div class="pbi-q-cols">'
@@ -773,59 +771,47 @@ function loadPBI() {
       if (pbiAnnD) pbiAnnD.innerHTML = annualHtml;
       if (pbiD) pbiD.innerHTML = qGridHtml;
 
-      // Wire Q3/Q4 click
       document.querySelectorAll('[data-diario-q]').forEach(function(el){
         el.addEventListener('click', function(){ openDiarioModal(el.dataset.diarioQ); });
       });
-    })
-    .catch(function(e){ console.log('PBI load error:', e); });
+  })
+  .catch(function(e){ console.log('PBI load error:', e); });
 }
 
-var PBI_DATA = {};
 
 function openDiarioModal(qNum) {
-  fetch(API + '?action=getDiario&_ts=' + Date.now(), { cache: 'no-store', redirect: 'follow' })
-    .then(function(r){ return r.text(); })
-    .then(function(text){
-      var data;
-      try { data = JSON.parse(text); } catch(e) { showToast('Error: respuesta invalida'); return; }
-      if (!data.success) { showToast('Error: ' + JSON.stringify(data).substring(0,80)); return; }
-      var rows = data.data || [];
-      var fmt = function(v) {
-        var n = Number(v); if (isNaN(n)) return '$0';
-        return n >= 1000 ? '$'+Math.round(n/1000)+'K' : '$'+Math.round(n);
-      };
-      var sorted = rows.slice().sort(function(a,b){ return String(b.fecha).localeCompare(String(a.fecha)); });
-      var tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:14px">'
-        +'<thead><tr>'
-        +'<th style="text-align:left;padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.1);font-size:11px;color:#9A9690;font-weight:500;text-transform:uppercase">Fecha</th>'
-        +'<th style="text-align:right;padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.1);font-size:11px;color:#9A9690;font-weight:500;text-transform:uppercase">Instalaciones</th>'
-        +'</tr></thead><tbody>';
-      sorted.forEach(function(r){
-        var d = new Date(r.fecha);
-        var label = isNaN(d.getTime()) ? r.fecha : d.getDate()+'-'+(d.toLocaleString('es',{month:'short'}));
-        tableHtml += '<tr>'
-          +'<td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.05);color:#1A1916">'+label+'</td>'
-          +'<td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.05);text-align:right;font-weight:500;color:#185FA5">'+fmt(r.instalaciones)+'</td>'
-          +'</tr>';
-      });
-      tableHtml += '</tbody></table>';
-
-      if (IS_DESKTOP) {
-        openDDPanel('diario_q'+qNum, 'Instalaciones Q'+qNum, null);
-        document.getElementById('dd-panel-content').innerHTML = tableHtml;
-        document.getElementById('dd-panel-title').textContent = 'Instalaciones Q'+qNum;
-        DD_STATE = 'list';
-      } else {
-        document.getElementById('dn').textContent = 'Instalaciones Q'+qNum;
-        document.getElementById('detail-edit-btn').classList.add('readonly-hidden');
-        document.getElementById('dbody').innerHTML = '<div style="padding:14px 16px">'+tableHtml+'</div>';
-        document.getElementById('dv').classList.add('open');
-      }
-    })
-    .catch(function(e){ showToast('Error: ' + e.message); console.error('getDiario error:', e); });
+  var rows = DIARIO_DATA;
+  var fmt = function(v) {
+    var n = Number(v); if (isNaN(n)) return '$0';
+    return n >= 1000 ? '$'+Math.round(n/1000)+'K' : '$'+Math.round(n);
+  };
+  var sorted = rows.slice().sort(function(a,b){ return String(b.fecha).localeCompare(String(a.fecha)); });
+  var tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:14px">'
+    +'<thead><tr>'
+    +'<th style="text-align:left;padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.1);font-size:11px;color:#9A9690;font-weight:500;text-transform:uppercase">Fecha</th>'
+    +'<th style="text-align:right;padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.1);font-size:11px;color:#9A9690;font-weight:500;text-transform:uppercase">Instalaciones</th>'
+    +'</tr></thead><tbody>';
+  sorted.forEach(function(r){
+    var d = new Date(r.fecha);
+    var label = isNaN(d.getTime()) ? r.fecha : d.getDate()+'-'+(d.toLocaleString('es',{month:'short'}));
+    tableHtml += '<tr>'
+      +'<td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.05);color:#1A1916">'+label+'</td>'
+      +'<td style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.05);text-align:right;font-weight:500;color:#185FA5">'+fmt(r.instalaciones)+'</td>'
+      +'</tr>';
+  });
+  tableHtml += '</tbody></table>';
+  if (IS_DESKTOP) {
+    openDDPanel('diario_q'+qNum, 'Instalaciones Q'+qNum, null);
+    document.getElementById('dd-panel-content').innerHTML = tableHtml;
+    document.getElementById('dd-panel-title').textContent = 'Instalaciones Q'+qNum;
+    DD_STATE = 'list';
+  } else {
+    document.getElementById('dn').textContent = 'Instalaciones Q'+qNum;
+    document.getElementById('detail-edit-btn').classList.add('readonly-hidden');
+    document.getElementById('dbody').innerHTML = '<div style="padding:14px 16px">'+tableHtml+'</div>';
+    document.getElementById('dv').classList.add('open');
+  }
 }
-
 
 function loadData() {
   fetch(API+'?action=get')
