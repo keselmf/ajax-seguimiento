@@ -199,8 +199,14 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 .bl{font-size:10px;color:#9A9690}
 
 
+.pbi-qwrap{position:relative}
+.pbi-qnav,.pbi-qhint{display:none}
+
 /* MOBILE: carrusel trimestral. Desktop conserva la grilla original. */
 @media (max-width:767px) {
+  #pbi-body .pbi-qwrap{
+    padding-bottom:18px;
+  }
   #pbi-body .pbi-qgrid{
     display:flex;
     grid-template-columns:none;
@@ -221,6 +227,36 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
     min-width:calc(100vw - 58px);
     scroll-snap-align:center;
     scroll-snap-stop:always;
+  }
+  #pbi-body .pbi-qnav{
+    display:flex;
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:28px;
+    height:28px;
+    border:none;
+    border-radius:50%;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,.92);
+    box-shadow:0 2px 10px rgba(0,0,0,.12);
+    color:#5F5E5A;
+    font-size:18px;
+    line-height:1;
+    z-index:2;
+    cursor:pointer;
+  }
+  #pbi-body .pbi-qnav.left{left:-2px}
+  #pbi-body .pbi-qnav.right{right:-2px}
+  #pbi-body .pbi-qnav.hidden{opacity:0;pointer-events:none}
+  #pbi-body .pbi-qhint{
+    display:block;
+    text-align:center;
+    font-size:10px;
+    color:#9A9690;
+    letter-spacing:.03em;
+    margin-top:2px;
   }
 }
 
@@ -786,7 +822,7 @@ function loadPBI() {
         +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
         +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
         +'</div>';
-      var qGridHtml = '<div class="pbi-q-title">Por trimestre</div><div class="pbi-qgrid">'+qHtml+'</div>';
+      var qGridHtml = '<div class="pbi-q-title">Por trimestre</div><div class="pbi-qwrap"><button class="pbi-qnav left hidden" type="button" aria-label="Ver trimestre anterior">&#8249;</button><div class="pbi-qgrid">'+qHtml+'</div><button class="pbi-qnav right hidden" type="button" aria-label="Ver trimestre siguiente">&#8250;</button><div class="pbi-qhint">&#8592; Deslizá para ver más &#8594;</div></div>';
 
       document.getElementById('pbi-body').innerHTML = annualHtml + qGridHtml;
 
@@ -801,14 +837,63 @@ function loadPBI() {
         el.addEventListener('click', function(){ openDiarioModal(el.dataset.diarioQ); });
       });
 
-      // En móvil, posicionar el carrusel en el trimestre actual.
+      // En móvil, posicionar el carrusel en el trimestre actual y mostrar flechas de navegación.
       if (window.matchMedia('(max-width: 767px)').matches) {
         requestAnimationFrame(function(){
+          var wrap = document.querySelector('#pbi-body .pbi-qwrap');
           var grid = document.querySelector('#pbi-body .pbi-qgrid');
           var currentCard = document.querySelector('#pbi-body .pbi-qcard.current');
-          if (!grid || !currentCard) return;
-          var targetLeft = currentCard.offsetLeft - (grid.clientWidth - currentCard.offsetWidth) / 2;
-          grid.scrollLeft = Math.max(0, targetLeft);
+          if (!wrap || !grid) return;
+
+          var leftBtn = wrap.querySelector('.pbi-qnav.left');
+          var rightBtn = wrap.querySelector('.pbi-qnav.right');
+          var cards = Array.prototype.slice.call(grid.querySelectorAll('.pbi-qcard'));
+
+          function updateQuarterNav(){
+            var maxScroll = Math.max(0, grid.scrollWidth - grid.clientWidth - 2);
+            if (leftBtn) leftBtn.classList.toggle('hidden', grid.scrollLeft <= 4);
+            if (rightBtn) rightBtn.classList.toggle('hidden', grid.scrollLeft >= maxScroll);
+          }
+
+          function scrollToCard(index){
+            if (!cards.length) return;
+            var safeIndex = Math.max(0, Math.min(index, cards.length - 1));
+            var card = cards[safeIndex];
+            if (!card) return;
+            var targetLeft = card.offsetLeft - (grid.clientWidth - card.offsetWidth) / 2;
+            grid.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+          }
+
+          function nearestCardIndex(){
+            if (!cards.length) return 0;
+            var center = grid.scrollLeft + (grid.clientWidth / 2);
+            var bestIndex = 0;
+            var bestDistance = Infinity;
+            cards.forEach(function(card, idx){
+              var cardCenter = card.offsetLeft + (card.offsetWidth / 2);
+              var dist = Math.abs(cardCenter - center);
+              if (dist < bestDistance) {
+                bestDistance = dist;
+                bestIndex = idx;
+              }
+            });
+            return bestIndex;
+          }
+
+          if (leftBtn) {
+            leftBtn.onclick = function(){ scrollToCard(nearestCardIndex() - 1); };
+          }
+          if (rightBtn) {
+            rightBtn.onclick = function(){ scrollToCard(nearestCardIndex() + 1); };
+          }
+
+          grid.addEventListener('scroll', updateQuarterNav, { passive: true });
+
+          if (currentCard) {
+            var initialLeft = currentCard.offsetLeft - (grid.clientWidth - currentCard.offsetWidth) / 2;
+            grid.scrollLeft = Math.max(0, initialLeft);
+          }
+          updateQuarterNav();
         });
       }
 
