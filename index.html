@@ -836,7 +836,7 @@ function openDiarioModal(qNum) {
         document.getElementById('dv').classList.add('open');
       }
     })
-    .catch(function(e){ showToast('Error cargando datos'); console.log(e); });
+    .catch(function(e){ showToast('Error: ' + e.message); console.error('getDiario error:', e); });
 }
 
 
