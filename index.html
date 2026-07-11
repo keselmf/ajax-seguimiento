@@ -198,6 +198,32 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 .b{width:100%;border-radius:3px 3px 0 0;min-height:3px}
 .bl{font-size:10px;color:#9A9690}
 
+
+/* MOBILE: carrusel trimestral. Desktop conserva la grilla original. */
+@media (max-width:767px) {
+  #pbi-body .pbi-qgrid{
+    display:flex;
+    grid-template-columns:none;
+    gap:10px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    scroll-behavior:smooth;
+    padding:2px 16px 10px;
+    margin-left:-14px;
+    margin-right:-14px;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+  }
+  #pbi-body .pbi-qgrid::-webkit-scrollbar{display:none}
+  #pbi-body .pbi-qcard{
+    flex:0 0 calc(100vw - 58px);
+    min-width:calc(100vw - 58px);
+    scroll-snap-align:center;
+    scroll-snap-stop:always;
+  }
+}
+
 /* SECTION TITLE */
 .sec-title{font-size:12px;font-weight:600;color:#5F5E5A;letter-spacing:.06em;text-transform:uppercase;padding:12px 0 7px}
 .sec-hd{display:flex;align-items:center;gap:8px;padding:12px 0 7px}
@@ -774,6 +800,18 @@ function loadPBI() {
       document.querySelectorAll('[data-diario-q]').forEach(function(el){
         el.addEventListener('click', function(){ openDiarioModal(el.dataset.diarioQ); });
       });
+
+      // En móvil, posicionar el carrusel en el trimestre actual.
+      if (window.matchMedia('(max-width: 767px)').matches) {
+        requestAnimationFrame(function(){
+          var grid = document.querySelector('#pbi-body .pbi-qgrid');
+          var currentCard = document.querySelector('#pbi-body .pbi-qcard.current');
+          if (!grid || !currentCard) return;
+          var targetLeft = currentCard.offsetLeft - (grid.clientWidth - currentCard.offsetWidth) / 2;
+          grid.scrollLeft = Math.max(0, targetLeft);
+        });
+      }
+
   })
   .catch(function(e){ console.log('PBI load error:', e); });
 }
