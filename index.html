@@ -1187,6 +1187,18 @@ function showDetail(id) {
         +'<select style="width:100%;border:none;outline:none;font-family:Inter,sans-serif;font-size:14px;color:#1A1916;background:none;cursor:pointer;appearance:auto">'+opts+'</select>'
         +'</div>';
     }
+    // Inline editable field — toggle
+    function IFTOGGLE(label, fieldKey, isOn) {
+      var disabled = IS_READONLY ? ' disabled aria-disabled="true"' : '';
+      return '<div class="ifield" data-key="'+fieldKey+'">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">'
+        +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em">'+label+'</div>'
+        +'<button type="button" id="desktop-tech-toggle" class="edit-toggle desktop-tech-toggle"'+disabled
+        +' onclick="toggleDesktopTech(\''+currentId+'\',this,event)" style="border:none;background:none;padding:0;margin-left:auto" aria-pressed="'+(isOn?'true':'false')+'">'
+        +'<div class="toggle-track'+(isOn?' on':'')+'"><div class="toggle-thumb"></div></div></button>'
+        +'</div></div>';
+    }
+
     // Inline editable field — textarea
     function IFTA(label, fieldKey, value) {
       var ro = IS_READONLY ? 'readonly' : '';
@@ -1209,9 +1221,10 @@ function showDetail(id) {
       +IFT('Próxima acción','proxima_accion',c.proxima_accion)
       +IFD('Fecha','fecha_proxima_accion',c.fecha_proxima_accion)
       +'</div>'
-      +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">'
-      +IFT('Seguimiento técnico','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])
-      +IFD('Fecha técnica','fecha_proxima_accion_tecnica',c.fecha_proxima_accion_tecnica)
+      +'<div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;margin-bottom:8px">'
+      +IFTOGGLE('Técnico activo','seguimiento tecnico',tec)
+      +'<div class="desktop-tech-field"'+(tec?'':' style="display:none"')+'>'+IFT('Seguimiento técnico','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])+'</div>'
+      +'<div class="desktop-tech-field"'+(tec?'':' style="display:none"')+'>'+IFD('Fecha técnica','fecha_proxima_accion_tecnica',c.fecha_proxima_accion_tecnica)+'</div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFT('Contacto principal','contacto principal',c['contacto principal'])
@@ -1500,6 +1513,71 @@ function CS(silent){
 function showToast(msg) {
   var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+
+function toggleDesktopTech(id, button, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (!button || IS_READONLY || button.disabled) {
+    if (IS_READONLY) showToast('Modo solo lectura');
+    return false;
+  }
+
+  var account = null;
+  for (var i = 0; i < CUENTAS.length; i++) {
+    if (String(CUENTAS[i].key_app) === String(id)) {
+      account = CUENTAS[i];
+      break;
+    }
+  }
+  if (!account) {
+    showToast('No se encontró la cuenta');
+    return false;
+  }
+
+  var track = button.querySelector('.toggle-track');
+  if (!track) return false;
+
+  var oldState = track.classList.contains('on');
+  var newState = !oldState;
+  var newValue = newState ? 'si' : '';
+
+  track.classList.toggle('on', newState);
+  button.setAttribute('aria-pressed', newState ? 'true' : 'false');
+  document.querySelectorAll('#dd-panel-content .desktop-tech-field').forEach(function(field) {
+    field.style.display = newState ? '' : 'none';
+  });
+  account['seguimiento tecnico'] = newValue;
+
+  var payload = {
+    action: 'update',
+    id: id,
+    fields: {'seguimiento tecnico': newValue}
+  };
+
+  fetch(API + '?action=update&payload=' + encodeURIComponent(JSON.stringify(payload)))
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      if (!data || !data.success) throw new Error('update failed');
+      showToast(newState ? 'Técnico activado' : 'Técnico desactivado');
+      renderAll();
+      if (IS_DESKTOP) renderDesktopMetrics();
+    })
+    .catch(function(error) {
+      console.error('Toggle técnico:', error);
+      track.classList.toggle('on', oldState);
+      button.setAttribute('aria-pressed', oldState ? 'true' : 'false');
+      document.querySelectorAll('#dd-panel-content .desktop-tech-field').forEach(function(field) {
+        field.style.display = oldState ? '' : 'none';
+      });
+      account['seguimiento tecnico'] = oldState ? 'si' : '';
+      showToast('No se pudo guardar el cambio');
+    });
+
+  return false;
 }
 
 // ============ EVENT DELEGATION ============
