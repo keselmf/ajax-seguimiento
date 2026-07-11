@@ -799,7 +799,7 @@ function openDiarioModal(qNum) {
     .then(function(text){
       var data;
       try { data = JSON.parse(text); } catch(e) { throw new Error('JSON parse error: ' + text.substring(0,100)); }
-      if (!data.success) { showToast('Error: ' + JSON.stringify(data)); return; }
+      if (!data.success) { showToast('No success: ' + JSON.stringify(data).substring(0,80)); return; }
       var rows = data.data || [];
 
       var fmt = function(v) {
