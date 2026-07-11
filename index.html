@@ -672,6 +672,39 @@ var TODAY = new Date(); TODAY.setHours(0,0,0,0);
 var prevTab = 'todas';
 var currentId = null;
 var isNew = false;
+var TIPO_CLIENTE_KEY = 'Tipo de Cliente';
+
+function normalizedFieldName(name) {
+  return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+function detectTipoClienteKey(rows) {
+  for (var i=0; i<rows.length; i++) {
+    var keys = Object.keys(rows[i] || {});
+    for (var j=0; j<keys.length; j++) {
+      if (normalizedFieldName(keys[j]) === 'tipo de cliente') return keys[j];
+    }
+  }
+  return 'Tipo de Cliente';
+}
+function normalizeTipoClienteValue(value) {
+  var normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'actual') return 'Actual';
+  if (normalized === 'nuevo') return 'Nuevo';
+  return '';
+}
+function getTipoCliente(c) {
+  if (!c) return '';
+  if (Object.prototype.hasOwnProperty.call(c, TIPO_CLIENTE_KEY)) {
+    return normalizeTipoClienteValue(c[TIPO_CLIENTE_KEY]);
+  }
+  var keys = Object.keys(c);
+  for (var i=0; i<keys.length; i++) {
+    if (normalizedFieldName(keys[i]) === 'tipo de cliente') {
+      return normalizeTipoClienteValue(c[keys[i]]);
+    }
+  }
+  return '';
+}
 
 // ============ DATE HELPERS ============
 function parseDate(s) {
@@ -945,6 +978,7 @@ function loadData() {
     .then(function(data){
       if (!data.success) { showToast('Error cargando datos'); return; }
       CUENTAS = data.data.filter(function(c){return c.key_app && c.cliente;});
+      TIPO_CLIENTE_KEY = detectTipoClienteKey(CUENTAS);
       document.getElementById('load-todas').style.display='none';
       document.getElementById('todas-content').style.display='block';
       // Update last-updated in header
@@ -1181,7 +1215,7 @@ function showDetail(id) {
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFT('Contacto principal','contacto principal',c['contacto principal'])
-      +IFS('Tipo de cliente','Tipo de Cliente',c['Tipo de Cliente'],['actual','nuevo'])
+      +IFS('Tipo de cliente',TIPO_CLIENTE_KEY,getTipoCliente(c),['','Actual','Nuevo'])
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFS('Estado','estado',c.estado,['Activo','Prospecto','En negociación','En riesgo','Cerrado'])
@@ -1245,7 +1279,8 @@ function showDetail(id) {
     +(tec?'<span class="badge bt">T\u00e9cnico activo</span>':'');
   var body='';
   if(c['tipo de cuenta'])body+=FLD('Tipo de cuenta',c['tipo de cuenta']+(c.Distri?' \u00b7 Dist: '+c.Distri:''));
-  if(c['Tipo de Cliente'])body+=FLD('Tipo de cliente',c['Tipo de Cliente']);
+  var tipoCliente=getTipoCliente(c);
+  if(tipoCliente)body+=FLD('Tipo de cliente',tipoCliente);
   if(c.proxima_accion)body+=FLD('Pr\u00f3xima acci\u00f3n',c.proxima_accion);
   if(c.fecha_proxima_accion)body+=FLD('Fecha acci\u00f3n',fmtDate(c.fecha_proxima_accion),ov?'ov':'');
   if(c.ultimo_contacto)body+=FLD('\u00daltimo contacto',fmtDate(c.ultimo_contacto));
@@ -1275,7 +1310,7 @@ function buildEditForm(c, newMode) {
     +'<div class="edit-block">'
     +'<div class="edit-row"><span class="edit-lbl">Cliente</span><input class="edit-val" name="cliente" placeholder="Nombre" value="'+(c?c.cliente||'':'')+'"></div>'
     +'<div class="edit-row"><span class="edit-lbl">Tipo de cuenta</span>'+sel('tipo de cuenta',['Monitoreo','Integrador','Instalador','Instalador/Monitoreo Mayorista','Distri'],c?c['tipo de cuenta']||'':'')+'</div>'
-    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel('Tipo de Cliente',['actual','nuevo',''],c?c['Tipo de Cliente']||'':'')+'</div>'
+    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel(TIPO_CLIENTE_KEY,['','Actual','Nuevo'],c?getTipoCliente(c):'')+'</div>'
     +'<div class="edit-row"><span class="edit-lbl">Distribuidor</span><input class="edit-val" name="Distri" placeholder="Opcional" value="'+(c?c.Distri||'':'')+'"></div>'
     +'</div>'
 
