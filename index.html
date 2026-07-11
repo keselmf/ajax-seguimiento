@@ -704,30 +704,44 @@ function loadPBI() {
         var po_k   = Number(d['ka_pct_overperf_'+q.k]||0);
 
         var cls = q.k===curQ?'current':(q.k<curQ&&fact_a>0?'done':'future');
-        var barColor = cls==='done'?'#1D9E75':cls==='current'?'#185FA5':'#9A9690';
         var hasDaily = (q.k==='q3'||q.k==='q4');
+        var revColor = cls==='done'?'#3B6D11':cls==='current'?'#185FA5':'#9A9690';
         var clickAttr = hasDaily ? ' data-diario-q="'+q.n+'" style="cursor:pointer"' : '';
 
+        var colHd = 'font-size:10px;color:#9A9690;text-align:right;padding-bottom:2px;font-weight:500;text-transform:uppercase;letter-spacing:.04em';
+        var rowLb = 'font-size:10px;color:#9A9690;padding:2px 0';
+        var rowVa = 'font-size:12px;font-weight:500;text-align:right;padding:2px 0;color:'+revColor;
+        var rowPc = function(v){ var n=Number(v); return n>=100?'#1D9E75':n>0?'#185FA5':'#9A9690'; };
+
         return '<div class="pbi-qcard '+cls+'"'+clickAttr+'>'
-          +'<div class="pbi-ql '+cls+'">'+q.l+(cls==='done'?' ✓':cls==='current'?' ●':'')+'</div>'
-          +'<div style="font-size:10px;color:#9A9690;margin-top:6px;margin-bottom:2px">AREA</div>'
-          +'<div class="pbi-qrev" style="color:'+(cls==='done'?'#3B6D11':cls==='current'?'#185FA5':'#9A9690')+'">'+fmt(fact_a)+'</div>'
-          +'<div class="pbi-qtgt">Target: '+fmt(tgt_a)+'</div>'
-          +'<div class="pbi-qbadges">'
-          +'<span class="pbi-qpct '+pctClass(pr_a)+'">'+pct(pr_a)+' real</span>'
-          +(po_a&&po_a!=pr_a?'<span class="pbi-qpct '+pctClass(po_a)+'">'+pct(po_a)+' overperf</span>':'')
-          +'</div>'
-          +'<div class="pbi-qbar"><div class="pbi-qbar-fill" style="width:'+Math.min(Math.round(pr_a),100)+'%;background:'+barColor+'"></div></div>'
-          +(tgt_k>0?
-            '<div style="font-size:10px;color:#9A9690;margin-top:8px;margin-bottom:2px">KA</div>'
-            +'<div class="pbi-qrev" style="color:'+(cls==='done'?'#3B6D11':cls==='current'?'#185FA5':'#9A9690')+'">'+fmt(fact_k)+'</div>'
-            +'<div class="pbi-qtgt">Target: '+fmt(tgt_k)+'</div>'
-            +'<div class="pbi-qbadges">'
-            +'<span class="pbi-qpct '+pctClass(pr_k)+'">'+pct(pr_k)+' real</span>'
-            +(po_k&&po_k!=pr_k?'<span class="pbi-qpct '+pctClass(po_k)+'">'+pct(po_k)+' overperf</span>':'')
-            +'</div>'
-          :'')
-          +(hasDaily?'<div style="font-size:10px;color:#185FA5;margin-top:6px">Ver detalle diario →</div>':'')
+          +'<div class="pbi-ql '+cls+'" style="margin-bottom:8px">'+q.l+(cls==='done'?' ✓':cls==='current'?' ●':'')+'</div>'
+          +'<table style="width:100%;border-collapse:collapse">'
+          +'<tr>'
+          +'<td style="width:40%"></td>'
+          +'<td style="'+colHd+'">Area</td>'
+          +'<td style="'+colHd+'">KA</td>'
+          +'</tr>'
+          +'<tr>'
+          +'<td style="'+rowLb+'">Fact</td>'
+          +'<td style="'+rowVa+'">'+fmt(fact_a)+'</td>'
+          +'<td style="'+rowVa+'">'+fmt(fact_k)+'</td>'
+          +'</tr>'
+          +'<tr>'
+          +'<td style="'+rowLb+'">Target</td>'
+          +'<td style="font-size:11px;text-align:right;padding:2px 0;color:#9A9690">'+fmt(tgt_a)+'</td>'
+          +'<td style="font-size:11px;text-align:right;padding:2px 0;color:#9A9690">'+fmt(tgt_k)+'</td>'
+          +'</tr>'
+          +'<tr>'
+          +'<td style="'+rowLb+'">Real</td>'
+          +'<td style="font-size:11px;text-align:right;padding:2px 0;color:'+rowPc(pr_a)+'">'+pct(pr_a)+'</td>'
+          +'<td style="font-size:11px;text-align:right;padding:2px 0;color:'+rowPc(pr_k)+'">'+pct(pr_k)+'</td>'
+          +'</tr>'
+          +'<tr>'
+          +'<td style="'+rowLb+'">Rollover</td>'
+          +'<td style="font-size:11px;text-align:right;padding:2px 0;color:'+rowPc(po_a)+'">'+pct(po_a)+'</td>'
+          +'<td style="font-size:11px;text-align:right;padding:2px 0;color:'+rowPc(po_k)+'">'+pct(po_k)+'</td>'
+          +'</tr>'
+          +'</table>'
           +'</div>';
       }).join('');
 
@@ -777,7 +791,7 @@ function loadPBI() {
 var PBI_DATA = {};
 
 function openDiarioModal(qNum) {
-  fetch(API + '?action=getDiario&_ts=' + Date.now(), { cache: 'no-store' })
+  fetch(API + '?action=getDiario&_ts=' + Date.now(), { cache: 'no-store', redirect: 'follow' })
     .then(function(r){return r.json();})
     .then(function(data){
       if (!data.success) { showToast('Error cargando datos'); return; }
