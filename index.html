@@ -1262,6 +1262,7 @@ function showDetail(id) {
           for(var i=0;i<CUENTAS.length;i++){
             if(CUENTAS[i].key_app===id){ CUENTAS[i][key]=val; break; }
           }
+          refreshActiveLists();
           // Visual feedback
           wrap.style.background='#EAF3DE';
           wrap.style.borderColor='#1D9E75';
@@ -1401,6 +1402,52 @@ function toDisplayDate(s) {
   return s;
 }
 
+function applyLocalAccountUpdate(id, fields) {
+  for (var i = 0; i < CUENTAS.length; i++) {
+    if (String(CUENTAS[i].key_app) === String(id)) {
+      Object.keys(fields).forEach(function(key){
+        CUENTAS[i][key] = fields[key];
+      });
+      return CUENTAS[i];
+    }
+  }
+  return null;
+}
+
+function getFilteredAccounts(key) {
+  if(key==='todas') return CUENTAS.filter(function(c){return c.cliente&&c.estado!=='Cerrado';});
+  if(key==='vencidas') return CUENTAS.filter(isOverdue);
+  if(key==='sinfecha') return CUENTAS.filter(function(c){return c.semaforo==='SIN FECHA'&&c.cliente;});
+  if(key==='tecnico') return CUENTAS.filter(function(c){return (c['seguimiento tecnico']||'').toLowerCase()==='si';});
+  if(key==='clientes'||key==='activas') return CUENTAS.filter(function(c){return c.estado==='Activo';});
+  if(key==='prospecto'||key==='estado_Prospecto') return CUENTAS.filter(function(c){return c.estado==='Prospecto';});
+  if(key==='negociacion'||key==='estado_En negociación') return CUENTAS.filter(function(c){return c.estado==='En negociación';});
+  if(key==='riesgo'||key==='estado_En riesgo') return CUENTAS.filter(function(c){return c.estado==='En riesgo';});
+  if(key==='cerradas'||key==='estado_Cerrado') return CUENTAS.filter(function(c){return c.estado==='Cerrado';});
+  if(key.indexOf('estado_')===0){var est=key.slice(7);return CUENTAS.filter(function(c){return c.estado===est;});}
+  if(key.indexOf('tipo_')===0){var tip=key.slice(5);return CUENTAS.filter(function(c){return c['tipo de cuenta']===tip;});}
+  if(key.indexOf('pri_')===0){var pri=key.slice(4);return CUENTAS.filter(function(c){return c.Prioridad===pri||PL(c)===pri;});}
+  return null;
+}
+
+function refreshActiveLists() {
+  renderAll();
+  if (IS_DESKTOP) renderDesktopMetrics();
+
+  var panel = document.getElementById('dd-cuentas-panel');
+  if (IS_DESKTOP && panel && panel.style.display === 'flex' && currentDDFilter) {
+    var refreshed = getFilteredAccounts(currentDDFilter.key);
+    if (refreshed) {
+      currentDDFilter.data = refreshed;
+      currentDDFilter.label = currentDDFilter.baseLabel || currentDDFilter.label.replace(/ \(\d+\)$/,'');
+    }
+  }
+
+  if (!IS_DESKTOP && currentMobileFilter && document.getElementById('v-filtrada').classList.contains('active')) {
+    SF(currentMobileFilter.key, currentMobileFilter.label);
+  }
+}
+
 function saveForm(newMode, tecState) {
   var fields={};
   document.querySelectorAll('#edit-body [name]').forEach(function(el){
@@ -1426,20 +1473,23 @@ function saveForm(newMode, tecState) {
     .then(function(r){return r.json();})
     .then(function(data){
       if(data.success){
+        if (!newMode && currentId) {
+          applyLocalAccountUpdate(currentId, fields);
+          refreshActiveLists();
+        }
+
         // Visual confirmation — button flashes green
         btn.textContent = '✓ Guardado';
         btn.style.background = '#1D9E75';
         setTimeout(function(){
           closeEdit();
           if(IS_DESKTOP && currentId && !newMode){
-            // Reload data then re-show detail
-            loadData();
-            setTimeout(function(){ showDetail(currentId); }, 600);
+            showDetail(currentId);
           } else {
             if(!newMode) document.getElementById('dv').classList.remove('open');
-            setTimeout(function(){loadData();},800);
+            if(newMode) setTimeout(function(){loadData();},300);
           }
-        }, 700);
+        }, 350);
       } else {
         showToast('Error: '+(data.error||'desconocido'));
         btn.textContent=newMode?'Crear cuenta':'Guardar cambios';
@@ -1490,7 +1540,10 @@ function ST(tab){
   SV('v-'+tab);prevTab=tab;CS(true);
 }
 
+var currentMobileFilter = null;
+
 function SF(key,label){
+  currentMobileFilter = {key:key,label:label};
   var data=[];
   if(key==='todas') data=CUENTAS;
   else if(key==='activas') data=CUENTAS.filter(function(c){return c.estado==='Activo';});
@@ -1734,7 +1787,7 @@ var DD_STATE = 'list';
 var currentDDFilter = {key:'todas', label:'Todas las cuentas'};
 
 function openDDPanel(key, label, data) {
-  currentDDFilter = {key:key, label:label, data:data};
+  currentDDFilter = {key:key, label:label, baseLabel:label.replace(/ \(\d+\)$/,''), data:data};
   DD_STATE = 'list';
   document.getElementById('dd-panel-title').textContent = label;
   var panel = document.getElementById('dd-cuentas-panel');
@@ -1752,7 +1805,12 @@ function closeDDPanel() {
 
 function renderDDPanel(filter) {
   DD_STATE = 'list';
-  var data = filter.data || CUENTAS;
+  var dynamicData = getFilteredAccounts(filter.key);
+  var data = dynamicData || filter.data || CUENTAS;
+  var baseLabel = filter.baseLabel || filter.label.replace(/ \(\d+\)$/,'');
+  filter.data = data;
+  filter.baseLabel = baseLabel;
+  filter.label = baseLabel + ' (' + data.length + ')';
   document.getElementById('dd-panel-title').textContent = filter.label;
   document.getElementById('dd-panel-content').innerHTML =
     '<div style="font-size:12px;color:#9A9690;margin-bottom:10px">'+data.length+' cuentas</div>'
