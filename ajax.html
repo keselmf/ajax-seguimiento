@@ -1027,14 +1027,33 @@ function applyAccountsData(rows, source, stamp) {
   }
 }
 
+function parseAccountsCacheValue(raw) {
+  if (!raw) return null;
+  try {
+    var parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && Array.isArray(parsed.rows)) return parsed.rows;
+    if (parsed && Array.isArray(parsed.data)) return parsed.data;
+  } catch(e) {}
+  return null;
+}
+
 function readAccountsCache() {
   try {
-    var raw = localStorage.getItem(ACCOUNTS_CACHE_KEY);
-    if (!raw) return null;
-    var rows = JSON.parse(raw);
-    if (!Array.isArray(rows) || !rows.length) return null;
-    var stamp = Number(localStorage.getItem(ACCOUNTS_CACHE_TIME_KEY) || 0);
-    return { rows: rows, timestamp: stamp || Date.now() };
+    // Clave actual y claves utilizadas por versiones anteriores.
+    var keys = [ACCOUNTS_CACHE_KEY, 'ajax_cuentas_cache_v1', 'ajax_cuentas_cache'];
+    for (var i=0; i<keys.length; i++) {
+      var rows = parseAccountsCacheValue(localStorage.getItem(keys[i]));
+      if (rows && rows.length) {
+        var stamp = Number(localStorage.getItem(ACCOUNTS_CACHE_TIME_KEY) || 0);
+        // Migrar inmediatamente a la clave canónica.
+        if (keys[i] !== ACCOUNTS_CACHE_KEY) {
+          try { localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(rows)); } catch(ignore) {}
+        }
+        return { rows: rows, timestamp: stamp || Date.now() };
+      }
+    }
+    return null;
   } catch(e) {
     console.error('Error leyendo ajax_cuentas:', e);
     return null;
@@ -1042,9 +1061,14 @@ function readAccountsCache() {
 }
 
 function writeAccountsCache(rows) {
+  var payload = JSON.stringify(rows || []);
+  var now = String(Date.now());
   try {
-    localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(rows || []));
-    localStorage.setItem(ACCOUNTS_CACHE_TIME_KEY, String(Date.now()));
+    // Guardar siempre en la clave original usada por la app.
+    localStorage.setItem('ajax_cuentas', payload);
+    localStorage.setItem(ACCOUNTS_CACHE_TIME_KEY, now);
+    // Mantener compatibilidad con versiones intermedias todavía instaladas.
+    localStorage.setItem('ajax_cuentas_cache_v1', payload);
   } catch(e) {
     console.error('Error guardando ajax_cuentas:', e);
   }
@@ -2102,9 +2126,16 @@ window.addEventListener('resize', function(){
   if (IS_DESKTOP !== wasDesktop) initLayout();
 });
 
+// Pintar la caché de cuentas antes de iniciar cualquier solicitud de red.
+var initialAccountsCache = readAccountsCache();
+if (initialAccountsCache) {
+  applyAccountsData(initialAccountsCache.rows, 'cache', initialAccountsCache.timestamp);
+}
+
 initLayout();
 
-loadData();
+// Actualizar en segundo plano sin volver a leer la caché.
+loadData({ skipCache:true });
 loadPBI();
 
 // Auto-refresh every 5 minutes
