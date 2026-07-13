@@ -77,7 +77,10 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
   .hdr-search-desktop input{flex:1;background:none;border:none;outline:none;font-family:Inter,sans-serif;font-size:13px;color:#1A1916}
   .hdr-search-desktop input::placeholder{color:#9A9690}
   .hdr-search-desktop span{font-size:15px;color:#9A9690;flex-shrink:0}
+  .hdr-agenda-btn{display:flex;align-items:center;gap:7px;border:1px solid rgba(0,0,0,.08);background:#fff;color:#185FA5;border-radius:8px;padding:8px 12px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;margin-right:20px}
+  .hdr-agenda-btn:hover{border-color:rgba(0,0,0,.2);background:#F9F9F8}
 }
+.hdr-agenda-btn{display:none}
 .hdr-top{display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-mark{width:32px;height:32px;background:#185FA5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff}
@@ -485,6 +488,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
         <span>⌕</span>
         <input id="si-hdr" type="search" placeholder="Buscar cuenta, tipo, distribuidor...">
       </div>
+      <button class="hdr-agenda-btn" id="hdr-agenda-btn" type="button">▦ Agenda</button>
       <div style="display:flex;align-items:center;gap:8px"><span id="hdr-upd" style="font-size:11px;color:#9A9690;display:none"></span><div class="refresh-btn" id="refresh-btn" title="Actualizar">↻</div><div class="hdr-badge" id="hdr-badge">Cargando...</div></div>
     </div>
   </div>
@@ -1732,6 +1736,11 @@ function initLayout() {
     }
     var hdrSearch = document.getElementById('hdr-search-desktop');
     if (hdrSearch) hdrSearch.style.display = 'flex';
+    var agendaBtn = document.getElementById('hdr-agenda-btn');
+    if (agendaBtn) {
+      agendaBtn.style.display = 'flex';
+      agendaBtn.addEventListener('click', openDesktopAgenda);
+    }
     // Wire header search
     var siHdr = document.getElementById('si-hdr');
     if (siHdr) {
@@ -1785,6 +1794,35 @@ function initLayout() {
 // ============ PANEL STATE ============
 var DD_STATE = 'list';
 var currentDDFilter = {key:'todas', label:'Todas las cuentas'};
+
+function openDesktopAgenda() {
+  DD_STATE = 'list';
+  var dnames=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var html='';
+  for(var i=0;i<7;i++){
+    var day=new Date(TODAY); day.setDate(day.getDate()+i);
+    var acc=CUENTAS.filter(function(c){
+      var d=parseDate(c.fecha_proxima_accion);
+      return d&&d.getTime()===day.getTime();
+    }).sort(function(a,b){ return (a.cliente||'').localeCompare(b.cliente||''); });
+    var lbl=i===0?'Hoy — '+dnames[day.getDay()]+' '+day.getDate()+' '+months[day.getMonth()]:dnames[day.getDay()]+' '+day.getDate()+' '+months[day.getMonth()];
+    if(!acc.length&&i>0) continue;
+    html+='<div class="dblock"><div class="dlbl'+(i===0?' today':'')+'">'+lbl+'</div>';
+    if(acc.length){
+      acc.forEach(function(c){
+        html+='<div class="aitem" data-action="sd" data-id="'+c.key_app+'"><div class="adot acc"></div><div><div class="aname">'+c.cliente+'</div><div class="asub">'+(c.proxima_accion||'Acción pendiente')+'</div></div></div>';
+      });
+    } else {
+      html+='<div class="aitem"><div class="adot ok"></div><div><div class="aname" style="color:#9A9690">Sin acciones</div></div></div>';
+    }
+    html+='</div>';
+  }
+  currentDDFilter={key:'agenda',label:'Agenda',baseLabel:'Agenda',data:[]};
+  document.getElementById('dd-panel-title').textContent='Agenda · próximos 7 días';
+  document.getElementById('dd-panel-content').innerHTML=html||'<div class="empty"><div class="empty-t">Sin acciones agendadas</div></div>';
+  document.getElementById('dd-cuentas-panel').style.display='flex';
+}
 
 function openDDPanel(key, label, data) {
   currentDDFilter = {key:key, label:label, baseLabel:label.replace(/ \(\d+\)$/,''), data:data};
