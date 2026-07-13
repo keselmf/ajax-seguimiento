@@ -509,7 +509,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
     <div class="desktop-dashboard" id="desktop-dashboard" style="width:100%">
 
       <!-- Fila 1: 4 métricas principales -->
-      <div class="dd-r4" id="dd-r1"></div>
+      <div class="dd-r5" id="dd-r1"></div>
 
       <!-- Fila 2: 5 estados -->
       <div class="dd-r5" id="dd-r2"></div>
@@ -1850,9 +1850,10 @@ function renderDesktopMetrics() {
   var r2 = document.getElementById('dd-r2');
   if(r1) r1.innerHTML=
     mkDDCard('Total', total, 'Excl. cerradas', '#185FA5', 100, '#185FA5', 'todas', CUENTAS.filter(function(c){return c.cliente&&c.estado!=='Cerrado';}))
-    +mkDDCard('Vencidas', vencidas.length, Math.round(vencidas.length/total*100)+'% del total', '#E24B4A', Math.round(vencidas.length/total*100), '#E24B4A', 'vencidas', vencidas)
-    +mkDDCard('Sin fecha', sf, 'Requieren agenda', '#9A9690', Math.round(sf/total*100), '#9A9690', 'sinfecha', CUENTAS.filter(function(c){return c.semaforo==='SIN FECHA'&&c.cliente;}))
-    +mkDDCard('T\u00e9cnico activo', tec.length, 'Con seguimiento', '#534AB7', Math.round(tec.length/total*100), '#534AB7', 'tecnico', tec);
+    +mkDDCard('Hoy', hoy.length, 'Acciones del día', '#185FA5', total?Math.round(hoy.length/total*100):0, '#185FA5', 'hoy', hoy)
+    +mkDDCard('Vencidas', vencidas.length, total?Math.round(vencidas.length/total*100)+'% del total':'0% del total', '#E24B4A', total?Math.round(vencidas.length/total*100):0, '#E24B4A', 'vencidas', vencidas)
+    +mkDDCard('Sin fecha', sf, 'Requieren agenda', '#9A9690', total?Math.round(sf/total*100):0, '#9A9690', 'sinfecha', CUENTAS.filter(function(c){return c.semaforo==='SIN FECHA'&&c.cliente;}))
+    +mkDDCard('T\u00e9cnico activo', tec.length, 'Con seguimiento', '#534AB7', total?Math.round(tec.length/total*100):0, '#534AB7', 'tecnico', tec);
   if(r2) r2.innerHTML=
     mkDDCard('Clientes', activas, 'Activos', '#1D9E75', null, null, 'clientes', CUENTAS.filter(function(c){return c.estado==='Activo';}))
     +mkDDCard('Prospecto', prospectos, 'En desarrollo', '#185FA5', null, null, 'prospecto', CUENTAS.filter(function(c){return c.estado==='Prospecto';}))
@@ -1914,6 +1915,7 @@ document.addEventListener('click', function(e) {
       var label = el.dataset.ddLabel;
       var data;
       if(key==='todas') data=CUENTAS.filter(function(c){return c.cliente&&c.estado!=='Cerrado';});
+      else if(key==='hoy') data=CUENTAS.filter(isToday);
       else if(key==='vencidas') data=CUENTAS.filter(isOverdue);
       else if(key==='sinfecha') data=CUENTAS.filter(function(c){return c.semaforo==='SIN FECHA'&&c.cliente;});
       else if(key==='tecnico') data=CUENTAS.filter(function(c){return (c['seguimiento tecnico']||'').toLowerCase()==='si';});
