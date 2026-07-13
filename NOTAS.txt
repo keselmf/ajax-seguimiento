@@ -1,0 +1,126 @@
+=======================================================
+AJAX SEGUIMIENTO — NOTAS DE LA APP
+=======================================================
+
+REPOSITORIOS
+------------
+App (GitHub Pages): https://github.com/keselmf/ajax-seguimiento
+Sync PowerBI:       https://github.com/keselmf/powerbi-to-sheets
+App URL producción: https://keselmf.github.io/ajax-seguimiento/?token=Jqi-n3-DeaWBwG2savrvJg
+
+
+ACCESO Y SEGURIDAD
+------------------
+Token de acceso:    Jqi-n3-DeaWBwG2savrvJg
+  - Se pasa por URL (?token=...) o queda guardado en localStorage (ajax_token)
+  - Sin token la app es de solo lectura (IS_READONLY = true)
+  - FAB y edición desactivados en modo readonly
+
+
+GOOGLE SHEET
+------------
+Sheet ID: 12W-8Z6mkUWRlRE7Z30TMtgZ8dZz8bLpAyrHBfhab71w
+Hojas:
+  - Cuentas:  datos de cuentas comerciales (CRUD completo)
+  - PowerBI:  KPIs de Area y KA por trimestre (escrito por sync.py)
+  - Diario:   instalaciones diarias de Area Q3/Q4 (columnas: Fecha, Acumulado, Instalaciones)
+
+
+APPS SCRIPT
+-----------
+URL actual: https://script.google.com/macros/s/AKfycbzH35K9Lbz61v2BfMac60CbmkrLBhCKhlRgOA-mYuhobGe1yXDHe612zfhBjhw-Po-LKw/exec
+
+Acciones disponibles (parámetro ?action=):
+  get          → devuelve todas las cuentas
+  update       → actualiza campos de una cuenta (body: {id, fields})
+  create       → crea cuenta nueva
+  delete       → elimina cuenta (body: {id})
+  getPBI       → devuelve KPIs de hoja PowerBI
+  writePBI     → escribe KPIs en hoja PowerBI (llamado por sync.py)
+  getDiario    → devuelve instalaciones diarias de hoja Diario
+  writeDiario  → escribe fila diaria en hoja Diario (body: {fecha, area_acumulado})
+
+Nota: cada nuevo deploy genera una URL nueva. Actualizar en:
+  - index.html → var API = '...'
+  - sync.py → SHEETS_ENDPOINT
+  - load_historico.py → SHEETS_ENDPOINT
+
+
+SYNC POWERBI (sync.py)
+----------------------
+Repo: keselmf/powerbi-to-sheets
+Corre: GitHub Actions, 10am UTC (7am ARG) todos los días
+Reporte PBI: Targets 2.0
+  URL: https://app.powerbi.com/groups/me/reports/05bb4648-9787-4e97-b857-b1609e42ebe2/9f0e11514488e07f2659
+
+Qué hace:
+  1. Abre PowerBI headless con Playwright usando browser state guardado en secret PBI_BROWSER_STATE
+  2. Extrae datos de tabla "Targets 2.0" (scroll para ver Q3)
+  3. Calcula overperf con rollover: overperf_q = max(0, (fact_q + overperf_q-1) - target_q * 1.10)
+  4. Escribe en hoja PowerBI via Apps Script (writePBI)
+  5. Escribe instalación diaria en hoja Diario con fecha D-1 (writeDiario)
+
+Campos que extrae:
+  - Area (Owned Accounts, weight 20%): target, fact, pct, overperf, pct_overperf × Q1-Q4
+  - KA (Key Accounts, weight 30%):     target, fact, pct, overperf, pct_overperf × Q1-Q4
+  - pct_anual
+
+Targets hardcodeados (Plan del reporte):
+  Area: Q1=$151,245 / Q2=$221,826 / Q3=$282,324 / Q4=$353,000
+  KA:   Q1=$124,625 / Q2=$179,149 / Q3=$202,516 / Q4=$250,000
+
+Q1 y Q2 están hardcodeados en el script (ya cerraron, no cambian).
+Q3 y Q4 se extraen en vivo con scroll de la tabla.
+
+Secret GitHub Actions:
+  PBI_BROWSER_STATE → JSON comprimido con gzip+base64 (browser state de Playwright)
+  Para actualizar: cat ~/.powerbi_browser_state.json | gzip | base64 | pbcopy
+  Límite de GitHub Secrets: 64KB. El archivo sin comprimir suele ser ~600KB.
+
+
+DATOS DIARIOS (load_historico.py)
+----------------------------------
+Script de carga única para cargar historial de instalaciones diarias.
+Carga en hoja "Diario" via writeDiario.
+Correr solo una vez al iniciar un nuevo trimestre.
+
+
+ESTRUCTURA DE LA APP (index.html)
+----------------------------------
+PWA single-file. Responsive: mobile (< 768px) y desktop (≥ 768px).
+
+Secciones mobile (tabs):
+  - Todas:     lista de cuentas con filtros
+  - Vencidas:  cuentas con fecha de acción vencida
+  - Sales:     widget Sales Machine con KPIs de PowerBI
+  - Tablero:   métricas de estado del pipeline
+
+Secciones desktop:
+  - Panel izquierdo: Sales Machine widget
+  - Panel derecho:   lista de cuentas + detalle
+
+Widget Sales Machine (tab Sales / panel izquierdo desktop):
+  - Fact anual / Target / Avance (calculado: sum(area_fact_qN) / sum(area_target_qN))
+  - Barra de progreso anual
+  - Grid 2x2 (mobile) / 4x1 (desktop) con cards por trimestre
+  - Cada card: Area y KA con Fact, Target, Real%, Acumulado%
+  - Q3 y Q4 clickeables → abre tabla de instalaciones diarias (hoja Diario)
+  - Datos cargados en paralelo al init (getPBI + getDiario simultáneos)
+  - Cache en localStorage (ajax_cuentas) para carga instantánea en reaperturas
+
+
+CAMPOS DE CUENTAS (hoja Cuentas)
+----------------------------------
+key_app, cliente, Prioridad, tipo de cuenta, estado, proxima_accion,
+fecha_proxima_accion, semaforo, seguimiento tecnico, Accion de seguimiento tecnico,
+fecha_proxima_accion_tecnica, Distri, Tipo de Cliente, notas, responsable,
+owner_email, contacto principal, ultimo_contacto
+
+Semáforo: se calcula automáticamente al guardar (ROJO si tiene fecha, SIN FECHA si no)
+Responsable/owner: se asignan automáticamente al crear (Federico Keselman)
+
+
+HISTORIAL DE DEPLOYS APPS SCRIPT
+----------------------------------
+Guardar la URL activa cada vez que se hace un nuevo deploy.
+La URL en index.html (var API) debe coincidir con el deploy activo.
