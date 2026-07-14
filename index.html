@@ -774,6 +774,18 @@ var PBI_DATA = {};
 var DIARIO_DATA = [];
 
 function loadPBI() {
+  // Mostrar datos cacheados instantáneamente
+  try {
+    var cachedPBI = localStorage.getItem('ajax_pbi');
+    var cachedDiario = localStorage.getItem('ajax_diario');
+    if (cachedPBI) {
+      var pbiData = JSON.parse(cachedPBI);
+      if (cachedDiario) DIARIO_DATA = JSON.parse(cachedDiario) || [];
+      if (pbiData) _renderPBI(pbiData);
+    }
+  } catch(e){}
+
+  // Actualizar en background
   Promise.all([
     fetch(API + '?action=getPBI&_ts=' + Date.now(), { cache: 'no-store' }).then(function(r){return r.json();}),
     fetch(API + '?action=getDiario&_ts=' + Date.now(), { cache: 'no-store', redirect: 'follow' }).then(function(r){return r.text();}).then(function(t){ try{return JSON.parse(t);}catch(e){return {success:false};} })
@@ -781,9 +793,18 @@ function loadPBI() {
   .then(function(results){
     var pbiResp = results[0];
     var diarioResp = results[1];
-    if (diarioResp && diarioResp.success) DIARIO_DATA = diarioResp.data || [];
+    if (diarioResp && diarioResp.success) {
+      DIARIO_DATA = diarioResp.data || [];
+      try { localStorage.setItem('ajax_diario', JSON.stringify(DIARIO_DATA)); } catch(e){}
+    }
     if (!pbiResp.success) { console.log('PBI no success', pbiResp); return; }
-    var d = pbiResp.data;
+    try { localStorage.setItem('ajax_pbi', JSON.stringify(pbiResp.data)); } catch(e){}
+    _renderPBI(pbiResp.data);
+  })
+  .catch(function(e){ console.log('PBI load error:', e); });
+}
+
+function _renderPBI(d) {
       var fmt = function(v) {
         if (!v && v!==0) return '$0';
         var n = Number(v);
@@ -934,8 +955,6 @@ function loadPBI() {
         });
       }
 
-  })
-  .catch(function(e){ console.log('PBI load error:', e); });
 }
 
 
