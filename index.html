@@ -63,7 +63,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
   .dd-btr{flex:1;background:#EEECEA;border-radius:3px;height:6px;overflow:hidden}
   .dd-bfi{height:100%;border-radius:3px}
   .dd-bct{font-size:12px;color:#9A9690;width:30px;text-align:right;flex-shrink:0}
-  .pbi-qgrid{grid-template-columns:repeat(4,1fr)!important}
+  .fab{bottom:20px;right:24px}
   .detail-view{max-width:100%}
   .edit-view{max-width:100%}
 }
@@ -77,10 +77,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
   .hdr-search-desktop input{flex:1;background:none;border:none;outline:none;font-family:Inter,sans-serif;font-size:13px;color:#1A1916}
   .hdr-search-desktop input::placeholder{color:#9A9690}
   .hdr-search-desktop span{font-size:15px;color:#9A9690;flex-shrink:0}
-  .hdr-agenda-btn{display:flex;align-items:center;gap:7px;border:1px solid rgba(0,0,0,.08);background:#fff;color:#185FA5;border-radius:8px;padding:8px 12px;font-family:Inter,sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;margin-right:20px}
-  .hdr-agenda-btn:hover{border-color:rgba(0,0,0,.2);background:#F9F9F8}
 }
-.hdr-agenda-btn{display:none}
 .hdr-top{display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-mark{width:32px;height:32px;background:#185FA5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff}
@@ -144,29 +141,11 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 .pbi-track{background:#EEECEA;border-radius:3px;height:6px;overflow:hidden}
 .pbi-fill{height:100%;border-radius:3px}
 .pbi-q-title{font-size:10px;font-weight:600;color:#5F5E5A;letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
-.pbi-qgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.pbi-qcard{background:#fff;border:0.5px solid rgba(0,0,0,.1);border-radius:12px;padding:14px 16px}
-.pbi-qcard.done{background:#EAF3DE;border-color:#C0DD97}
-.pbi-qcard.current{background:#E6F1FB;border-color:#B5D4F4}
+.pbi-qgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.pbi-qcard{border-radius:9px;padding:9px 11px}
+.pbi-qcard.done{background:#EAF3DE}
+.pbi-qcard.current{background:#E6F1FB}
 .pbi-qcard.future{background:#F5F4F1;opacity:.7}
-.pbi-q-title-row{font-size:12px;font-weight:500;color:#5F5E5A;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
-.pbi-q-badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500}
-.pbi-q-badge.done{background:#C0DD97;color:#3B6D11}
-.pbi-q-badge.cur{background:#B5D4F4;color:#0C447C}
-.pbi-q-badge.fut{background:rgba(0,0,0,.06);color:#888780}
-.pbi-q-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
-.pbi-q-col-hd{font-size:9px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em;padding-bottom:6px;border-bottom:0.5px solid rgba(0,0,0,.08);margin-bottom:6px}
-.pbi-q-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;gap:8px}
-.pbi-q-lbl{font-size:11px;color:#9A9690;white-space:nowrap}
-.pbi-q-val{font-size:12px;font-weight:500;text-align:right}
-.pbi-q-val.done{color:#3B6D11}
-.pbi-q-val.cur{color:#185FA5}
-.pbi-q-val.muted{color:#9A9690;font-size:11px;font-weight:400}
-.pbi-q-div{border:none;border-top:0.5px solid rgba(0,0,0,.08);margin:8px 0}
-.pbi-q-pct{font-size:12px;font-weight:500;text-align:right}
-.pbi-q-pct.over{color:#1D9E75}
-.pbi-q-pct.mid{color:#185FA5}
-.pbi-q-pct.low{color:#9A9690}
 .pbi-ql{font-size:10px;font-weight:500;margin-bottom:3px}
 .pbi-ql.done{color:#3B6D11}
 .pbi-ql.current{color:#185FA5}
@@ -200,68 +179,6 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
 .bw{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
 .b{width:100%;border-radius:3px 3px 0 0;min-height:3px}
 .bl{font-size:10px;color:#9A9690}
-
-
-.pbi-qwrap{position:relative}
-.pbi-qnav,.pbi-qhint{display:none}
-
-/* MOBILE: carrusel trimestral. Desktop conserva la grilla original. */
-@media (max-width:767px) {
-  #pbi-body .pbi-qwrap{
-    padding-bottom:18px;
-  }
-  #pbi-body .pbi-qgrid{
-    display:flex;
-    grid-template-columns:none;
-    gap:10px;
-    overflow-x:auto;
-    scroll-snap-type:x mandatory;
-    scroll-behavior:smooth;
-    padding:2px 16px 10px;
-    margin-left:-14px;
-    margin-right:-14px;
-    scrollbar-width:none;
-    -webkit-overflow-scrolling:touch;
-    overscroll-behavior-x:contain;
-  }
-  #pbi-body .pbi-qgrid::-webkit-scrollbar{display:none}
-  #pbi-body .pbi-qcard{
-    flex:0 0 calc(100vw - 58px);
-    min-width:calc(100vw - 58px);
-    scroll-snap-align:center;
-    scroll-snap-stop:always;
-  }
-  #pbi-body .pbi-qnav{
-    display:flex;
-    position:absolute;
-    top:50%;
-    transform:translateY(-50%);
-    width:28px;
-    height:28px;
-    border:none;
-    border-radius:50%;
-    align-items:center;
-    justify-content:center;
-    background:rgba(255,255,255,.92);
-    box-shadow:0 2px 10px rgba(0,0,0,.12);
-    color:#5F5E5A;
-    font-size:18px;
-    line-height:1;
-    z-index:2;
-    cursor:pointer;
-  }
-  #pbi-body .pbi-qnav.left{left:-2px}
-  #pbi-body .pbi-qnav.right{right:-2px}
-  #pbi-body .pbi-qnav.hidden{opacity:0;pointer-events:none}
-  #pbi-body .pbi-qhint{
-    display:block;
-    text-align:center;
-    font-size:10px;
-    color:#9A9690;
-    letter-spacing:.03em;
-    margin-top:2px;
-  }
-}
 
 /* SECTION TITLE */
 .sec-title{font-size:12px;font-weight:600;color:#5F5E5A;letter-spacing:.06em;text-transform:uppercase;padding:12px 0 7px}
@@ -488,7 +405,6 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
         <span>⌕</span>
         <input id="si-hdr" type="search" placeholder="Buscar cuenta, tipo, distribuidor...">
       </div>
-      <button class="hdr-agenda-btn" id="hdr-agenda-btn" type="button">▦ Agenda</button>
       <div style="display:flex;align-items:center;gap:8px"><span id="hdr-upd" style="font-size:11px;color:#9A9690;display:none"></span><div class="refresh-btn" id="refresh-btn" title="Actualizar">↻</div><div class="hdr-badge" id="hdr-badge">Cargando...</div></div>
     </div>
   </div>
@@ -513,7 +429,7 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
     <div class="desktop-dashboard" id="desktop-dashboard" style="width:100%">
 
       <!-- Fila 1: 4 métricas principales -->
-      <div class="dd-r5" id="dd-r1"></div>
+      <div class="dd-r4" id="dd-r1"></div>
 
       <!-- Fila 2: 5 estados -->
       <div class="dd-r5" id="dd-r2"></div>
@@ -656,7 +572,7 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(function(e){console.log('SW:',e);});
   });
 }
-var API = 'https://script.google.com/macros/s/AKfycbzH35K9Lbz61v2BfMac60CbmkrLBhCKhlRgOA-mYuhobGe1yXDHe612zfhBjhw-Po-LKw/exec';
+var API = 'https://script.google.com/macros/s/AKfycbwljgsU-e18AqjlNzsqvN_oMmP8r5bq3z16EDo8XYcpFA1OkFguEfWtBrdYO8tVUAxc/exec';
 
 // ============ SECURITY — definir PRIMERO ============
 var SECRET_TOKEN = 'Jqi-n3-DeaWBwG2savrvJg';
@@ -676,39 +592,6 @@ var TODAY = new Date(); TODAY.setHours(0,0,0,0);
 var prevTab = 'todas';
 var currentId = null;
 var isNew = false;
-var TIPO_CLIENTE_KEY = 'Tipo de Cliente';
-
-function normalizedFieldName(name) {
-  return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
-}
-function detectTipoClienteKey(rows) {
-  for (var i=0; i<rows.length; i++) {
-    var keys = Object.keys(rows[i] || {});
-    for (var j=0; j<keys.length; j++) {
-      if (normalizedFieldName(keys[j]) === 'tipo de cliente') return keys[j];
-    }
-  }
-  return 'Tipo de Cliente';
-}
-function normalizeTipoClienteValue(value) {
-  var normalized = String(value || '').trim().toLowerCase();
-  if (normalized === 'actual') return 'Actual';
-  if (normalized === 'nuevo') return 'Nuevo';
-  return '';
-}
-function getTipoCliente(c) {
-  if (!c) return '';
-  if (Object.prototype.hasOwnProperty.call(c, TIPO_CLIENTE_KEY)) {
-    return normalizeTipoClienteValue(c[TIPO_CLIENTE_KEY]);
-  }
-  var keys = Object.keys(c);
-  for (var i=0; i<keys.length; i++) {
-    if (normalizedFieldName(keys[i]) === 'tipo de cliente') {
-      return normalizeTipoClienteValue(c[keys[i]]);
-    }
-  }
-  return '';
-}
 
 // ============ DATE HELPERS ============
 function parseDate(s) {
@@ -770,20 +653,13 @@ function RC(c) {
 
 function FLD(l,v,cls) { return '<div class="field"><div class="fl">'+l+'</div><div class="fv'+(cls?' '+cls:'')+'" >'+v+'</div></div>'; }
 
-var PBI_DATA = {};
-var DIARIO_DATA = [];
-
 function loadPBI() {
-  Promise.all([
-    fetch(API + '?action=getPBI&_ts=' + Date.now(), { cache: 'no-store' }).then(function(r){return r.json();}),
-    fetch(API + '?action=getDiario&_ts=' + Date.now(), { cache: 'no-store', redirect: 'follow' }).then(function(r){return r.text();}).then(function(t){ try{return JSON.parse(t);}catch(e){return {success:false};} })
-  ])
-  .then(function(results){
-    var pbiResp = results[0];
-    var diarioResp = results[1];
-    if (diarioResp && diarioResp.success) DIARIO_DATA = diarioResp.data || [];
-    if (!pbiResp.success) { console.log('PBI no success', pbiResp); return; }
-    var d = pbiResp.data;
+  fetch(API + '?action=getPBI&_ts=' + Date.now(), { cache: 'no-store' })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if (!data.success) { console.log('PBI no success', data); return; }
+      console.log('PBI refresh OK', new Date().toLocaleTimeString(), data);
+      var d = data.data;
       var fmt = function(v) {
         if (!v && v!==0) return '$0';
         var n = Number(v);
@@ -792,200 +668,111 @@ function loadPBI() {
         if (n >= 1000) return '$'+Math.round(n/1000)+'K';
         return '$'+Math.round(n);
       };
-      var pct = function(v) { return v ? Math.round(Number(v))+'%' : '—'; };
+      var pct = function(v) { return v ? Math.round(Number(v))+'%' : '0%'; };
+      var pctClass = function(v) { var n=Number(v); return n>=100?'over':n>0?'under':'zero'; };
       var upd = d['actualizado'] || '';
       if (upd && String(upd).indexOf('T') > -1) { var dd=new Date(upd); upd=dd.getDate()+'/'+(dd.getMonth()+1)+'/'+dd.getFullYear(); }
       document.getElementById('pbi-upd').textContent = upd ? 'Actualizado '+upd : '';
-
-      var areaFact = Number(d['area_fact_q1']||0)+Number(d['area_fact_q2']||0)+Number(d['area_fact_q3']||0)+Number(d['area_fact_q4']||0);
-      var areaTgt  = Number(d['area_target_q1']||0)+Number(d['area_target_q2']||0)+Number(d['area_target_q3']||0)+Number(d['area_target_q4']||0);
-      var pctAnual = areaTgt > 0 ? Math.round(areaFact / areaTgt * 100) : 0;
+      var fact = Number(d['fact']||0);
+      var target = Number(d['target']||0);
+      var pctAnual = target ? Math.round(fact/target*100) : 0;
       var pctColor = pctAnual>=100?'green':pctAnual>=70?'amber':'red';
       var progColor = pctAnual>=100?'#1D9E75':pctAnual>=70?'#BA7517':'#E24B4A';
-
+      var quarters = [
+        {k:'q1',l:'Q1 2026',cls:Number(d['q1']||0)>0&&Number(d['q1_pct_real']||0)>0?'done':'future'},
+        {k:'q2',l:'Q2 2026',cls:'current'},
+        {k:'q3',l:'Q3 2026',cls:'future'},
+        {k:'q4',l:'Q4 2026',cls:'future'}
+      ];
+      // Detect current quarter
       var now = new Date(); var mo = now.getMonth()+1;
       var curQ = mo<=3?'q1':mo<=6?'q2':mo<=9?'q3':'q4';
-      var quarters = [
-        {n:'1',l:'Q1 2026',k:'q1'},
-        {n:'2',l:'Q2 2026',k:'q2'},
-        {n:'3',l:'Q3 2026',k:'q3'},
-        {n:'4',l:'Q4 2026',k:'q4'}
-      ];
-
+      quarters.forEach(function(q){
+        if(q.k===curQ) q.cls='current';
+        else if(q.k<curQ&&Number(d[q.k+'_pct_real']||0)>0) q.cls='done';
+      });
       var qHtml = quarters.map(function(q){
-        var fa = Number(d['area_fact_'+q.k]||0);
-        var ta = Number(d['area_target_'+q.k]||0);
-        var ra = Number(d['area_pct_'+q.k]||0);
-        var oa = Number(d['area_pct_overperf_'+q.k]||0);
-        var fk = Number(d['ka_fact_'+q.k]||0);
-        var tk = Number(d['ka_target_'+q.k]||0);
-        var rk = Number(d['ka_pct_'+q.k]||0);
-        var ok = Number(d['ka_pct_overperf_'+q.k]||0);
-        var cls = q.k===curQ?'current':(q.k<curQ&&fa>0?'done':'future');
-        var vc = cls==='done'?'done':cls==='current'?'cur':'muted';
-        var pc = function(v){ var n=Number(v); return n>=100?'over':n>0?'mid':'low'; };
-        var badge = cls==='done'?'<span class="pbi-q-badge done">✓ Cerrado</span>':cls==='current'?'<span class="pbi-q-badge cur">● En curso</span>':'<span class="pbi-q-badge fut">Pendiente</span>';
-        var hasDaily = q.k==='q3'||q.k==='q4';
-        var clickAttr = hasDaily?' data-diario-q="'+q.n+'" style="cursor:pointer"':'';
-        return '<div class="pbi-qcard '+cls+'"'+clickAttr+'>'
-          +'<div class="pbi-q-title-row"><span>'+q.l+'</span>'+badge+'</div>'
-          +'<div class="pbi-q-cols">'
-          +'<div>'
-          +'<div class="pbi-q-col-hd">Area</div>'
-          +'<div class="pbi-q-row"><span class="pbi-q-lbl">Fact</span><span class="pbi-q-val '+vc+'">'+fmt(fa)+'</span></div>'
-          +'<div class="pbi-q-row"><span class="pbi-q-lbl">Target</span><span class="pbi-q-val muted">'+fmt(ta)+'</span></div>'
-          +'<hr class="pbi-q-div">'
-          +'<div class="pbi-q-row"><span class="pbi-q-lbl">Real</span><span class="pbi-q-pct '+pc(ra)+'">'+pct(ra)+'</span></div>'
-          +'<div class="pbi-q-row"><span class="pbi-q-lbl">Acumulado</span><span class="pbi-q-pct '+pc(oa)+'">'+pct(oa)+'</span></div>'
+        var rev = d[q.k]||0;
+        var tgt = d[q.k+'_target']||0;
+        var pr = d[q.k+'_pct_real']||0;
+        var po = d[q.k+'_pct_overperf']||0;
+        var barW = Math.min(Math.round(Number(pr)),100);
+        var barColor = q.cls==='done'?'#1D9E75':q.cls==='current'?'#185FA5':'#9A9690';
+        return '<div class="pbi-qcard '+q.cls+'">'
+          +'<div class="pbi-ql '+q.cls+'">'+q.l+(q.cls==='done'?' ✓':q.cls==='current'?' ●':'')+'</div>'
+          +'<div class="pbi-qrev" style="color:'+(q.cls==='done'?'#3B6D11':q.cls==='current'?'#185FA5':'#9A9690')+'">'+fmt(rev)+'</div>'
+          +'<div class="pbi-qtgt">Target: '+fmt(tgt)+'</div>'
+          +'<div class="pbi-qbadges">'
+          +'<span class="pbi-qpct '+pctClass(pr)+'">'+pct(pr)+' real</span>'
+          +(po&&po!=pr?'<span class="pbi-qpct '+pctClass(po)+'">'+pct(po)+'</span>':'')
           +'</div>'
-          +'<div>'
-          +'<div class="pbi-q-col-hd">KA</div>'
-          +'<div class="pbi-q-row"><span class="pbi-q-lbl">Fact</span><span class="pbi-q-val '+vc+'">'+fmt(fk)+'</span></div>'
-          +'<div class="pbi-q-row"><span class="pbi-q-lbl">Target</span><span class="pbi-q-val muted">'+fmt(tk)+'</span></div>'
-          +'<hr class="pbi-q-div">'
-          +'<div class="pbi-q-row"><span class="pbi-q-lbl">Real</span><span class="pbi-q-pct '+pc(rk)+'">'+pct(rk)+'</span></div>'
-          +'<div class="pbi-q-row"><span class="pbi-q-lbl">Acumulado</span><span class="pbi-q-pct '+pc(ok)+'">'+pct(ok)+'</span></div>'
-          +'</div>'
-          +'</div></div>';
+          +'<div class="pbi-qbar"><div class="pbi-qbar-fill" style="width:'+barW+'%;background:'+barColor+'"></div></div>'
+          +'</div>';
       }).join('');
-
-      var annualHtml =
+      var pbiHtml =
         '<div class="pbi-annual">'
-        +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(areaFact)+'</div></div>'
-        +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(areaTgt)+'</div></div>'
+        +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(fact)+'</div></div>'
+        +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(target)+'</div></div>'
         +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
         +'</div>'
         +'<div class="pbi-progress-wrap">'
         +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
         +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
-        +'</div>';
-      var qGridHtml = '<div class="pbi-q-title">Por trimestre</div><div class="pbi-qwrap"><button class="pbi-qnav left hidden" type="button" aria-label="Ver trimestre anterior">&#8249;</button><div class="pbi-qgrid">'+qHtml+'</div><button class="pbi-qnav right hidden" type="button" aria-label="Ver trimestre siguiente">&#8250;</button><div class="pbi-qhint">&#8592; Deslizá para ver más &#8594;</div></div>';
+        +'</div>'
+        +'<div class="pbi-q-title">Por trimestre</div>'
+        +'<div class="pbi-qgrid">'+qHtml+'</div>';
+      document.getElementById('pbi-body').innerHTML = pbiHtml;
 
-      document.getElementById('pbi-body').innerHTML = annualHtml + qGridHtml;
-
+      // Update desktop PBI - split layout
       var pbiD = document.getElementById('pbi-body-d');
       var pbiUpdD = document.getElementById('pbi-upd-d');
       var pbiAnnD = document.getElementById('pbi-annual-d');
       if (pbiUpdD) pbiUpdD.textContent = upd ? 'Actualizado '+upd : '';
-      if (pbiAnnD) pbiAnnD.innerHTML = annualHtml;
-      if (pbiD) pbiD.innerHTML = qGridHtml;
-
-      document.querySelectorAll('[data-diario-q]').forEach(function(el){
-        el.addEventListener('click', function(){ openDiarioModal(el.dataset.diarioQ); });
-      });
-
-      // En móvil, posicionar el carrusel en el trimestre actual y mostrar flechas de navegación.
-      if (window.matchMedia('(max-width: 767px)').matches) {
-        requestAnimationFrame(function(){
-          var wrap = document.querySelector('#pbi-body .pbi-qwrap');
-          var grid = document.querySelector('#pbi-body .pbi-qgrid');
-          var currentCard = document.querySelector('#pbi-body .pbi-qcard.current');
-          if (!wrap || !grid) return;
-
-          var leftBtn = wrap.querySelector('.pbi-qnav.left');
-          var rightBtn = wrap.querySelector('.pbi-qnav.right');
-          var cards = Array.prototype.slice.call(grid.querySelectorAll('.pbi-qcard'));
-
-          function updateQuarterNav(){
-            var maxScroll = Math.max(0, grid.scrollWidth - grid.clientWidth - 2);
-            if (leftBtn) leftBtn.classList.toggle('hidden', grid.scrollLeft <= 4);
-            if (rightBtn) rightBtn.classList.toggle('hidden', grid.scrollLeft >= maxScroll);
-          }
-
-          function scrollToCard(index){
-            if (!cards.length) return;
-            var safeIndex = Math.max(0, Math.min(index, cards.length - 1));
-            var card = cards[safeIndex];
-            if (!card) return;
-            var targetLeft = card.offsetLeft - (grid.clientWidth - card.offsetWidth) / 2;
-            grid.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
-          }
-
-          function nearestCardIndex(){
-            if (!cards.length) return 0;
-            var center = grid.scrollLeft + (grid.clientWidth / 2);
-            var bestIndex = 0;
-            var bestDistance = Infinity;
-            cards.forEach(function(card, idx){
-              var cardCenter = card.offsetLeft + (card.offsetWidth / 2);
-              var dist = Math.abs(cardCenter - center);
-              if (dist < bestDistance) {
-                bestDistance = dist;
-                bestIndex = idx;
-              }
-            });
-            return bestIndex;
-          }
-
-          if (leftBtn) {
-            leftBtn.onclick = function(){ scrollToCard(nearestCardIndex() - 1); };
-          }
-          if (rightBtn) {
-            rightBtn.onclick = function(){ scrollToCard(nearestCardIndex() + 1); };
-          }
-
-          grid.addEventListener('scroll', updateQuarterNav, { passive: true });
-
-          if (currentCard) {
-            var initialLeft = currentCard.offsetLeft - (grid.clientWidth - currentCard.offsetWidth) / 2;
-            grid.scrollLeft = Math.max(0, initialLeft);
-          }
-          updateQuarterNav();
-        });
-      }
-
-  })
-  .catch(function(e){ console.log('PBI load error:', e); });
+      if (pbiAnnD) pbiAnnD.innerHTML =
+        '<div class="pbi-annual">'
+        +'<div class="pbi-ab"><div class="pbi-al">Fact anual</div><div class="pbi-an green">'+fmt(fact)+'</div></div>'
+        +'<div class="pbi-ab"><div class="pbi-al">Target</div><div class="pbi-an">'+fmt(target)+'</div></div>'
+        +'<div class="pbi-ab"><div class="pbi-al">Avance</div><div class="pbi-an '+pctColor+'">'+pctAnual+'%</div></div>'
+        +'</div>'
+        +'<div class="pbi-progress-wrap" style="margin-top:8px">'
+        +'<div class="pbi-prog-head"><span>Progreso anual</span><span style="color:'+progColor+'">'+pctAnual+'%</span></div>'
+        +'<div class="pbi-track"><div class="pbi-fill" style="width:'+Math.min(pctAnual,100)+'%;background:'+progColor+'"></div></div>'
+        +'</div>';
+      if (pbiD) pbiD.innerHTML =
+        '<div class="pbi-q-title">Por trimestre</div>'
+        +'<div class="pbi-qgrid">'+qHtml+'</div>';
+    })
+    .catch(function(e){ console.log('PBI load error:', e); });
 }
 
-
-function openDiarioModal(qNum) {
-  var rows = DIARIO_DATA;
-  var fmt = function(v) {
-    var n = Number(v); if (isNaN(n)) return '$0';
-    return '$' + Math.round(n).toLocaleString('es-AR');
-  };
-  var sorted = rows.slice().sort(function(a,b){ return String(b.fecha).localeCompare(String(a.fecha)); });
-  var tableHtml = '<table style="width:100%;border-collapse:collapse;font-size:13px">'
-    +'<thead><tr>'
-    +'<th style="text-align:left;padding:6px 12px;border-bottom:1px solid rgba(0,0,0,.1);font-size:10px;color:#9A9690;font-weight:500;text-transform:uppercase">Fecha</th>'
-    +'<th style="text-align:right;padding:6px 12px;border-bottom:1px solid rgba(0,0,0,.1);font-size:10px;color:#9A9690;font-weight:500;text-transform:uppercase">Instalaciones</th>'
-    +'</tr></thead><tbody>';
-  sorted.forEach(function(r){
-    var d = new Date(r.fecha);
-    var label = isNaN(d.getTime()) ? r.fecha : d.getDate()+'-'+(d.toLocaleString('es',{month:'short'}));
-    tableHtml += '<tr>'
-      +'<td style="padding:6px 12px;border-bottom:1px solid rgba(0,0,0,.05);color:#1A1916">'+label+'</td>'
-      +'<td style="padding:6px 12px;border-bottom:1px solid rgba(0,0,0,.05);text-align:right;font-weight:500;color:#185FA5">'+fmt(r.instalaciones)+'</td>'
-      +'</tr>';
-  });
-  tableHtml += '</tbody></table>';
-  if (IS_DESKTOP) {
-    openDDPanel('diario_q'+qNum, 'Instalaciones Q'+qNum, null);
-    document.getElementById('dd-panel-content').innerHTML = tableHtml;
-    document.getElementById('dd-panel-title').textContent = 'Instalaciones Q'+qNum;
-    // Shrink modal to fit content
-    var inner = document.querySelector('#dd-cuentas-panel > div');
-    if(inner) { inner.style.width = '420px'; inner.style.height = 'auto'; inner.style.maxHeight = '85vh'; }
-    DD_STATE = 'list';
-  } else {
-    document.getElementById('dn').textContent = 'Instalaciones Q'+qNum;
-    document.getElementById('detail-edit-btn').classList.add('readonly-hidden');
-    document.getElementById('dbody').innerHTML = '<div style="padding:14px 16px">'+tableHtml+'</div>';
-    document.getElementById('dv').classList.add('open');
-  }
-}
 
 function loadData() {
+  // Mostrar datos cacheados instantáneamente si existen
+  try {
+    var cached = localStorage.getItem('ajax_cuentas');
+    if (cached) {
+      var cachedData = JSON.parse(cached);
+      if (cachedData && cachedData.length) {
+        CUENTAS = cachedData.filter(function(c){return c.key_app && c.cliente;});
+        document.getElementById('load-todas').style.display='none';
+        document.getElementById('todas-content').style.display='block';
+        requestAnimationFrame(function(){
+          renderAll();
+          if (IS_DESKTOP) renderDesktopMetrics();
+        });
+      }
+    }
+  } catch(e){}
+
+  // Actualizar en background
   fetch(API+'?action=get')
     .then(function(r){return r.json();})
     .then(function(data){
       if (!data.success) { showToast('Error cargando datos'); return; }
       CUENTAS = data.data.filter(function(c){return c.key_app && c.cliente;});
-      TIPO_CLIENTE_KEY = detectTipoClienteKey(CUENTAS);
+      try { localStorage.setItem('ajax_cuentas', JSON.stringify(data.data)); } catch(e){}
       document.getElementById('load-todas').style.display='none';
       document.getElementById('todas-content').style.display='block';
-      // Update last-updated in header
       var now = new Date();
       var hdrUpd = document.getElementById('hdr-upd');
       if(hdrUpd){
@@ -1191,18 +978,6 @@ function showDetail(id) {
         +'<select style="width:100%;border:none;outline:none;font-family:Inter,sans-serif;font-size:14px;color:#1A1916;background:none;cursor:pointer;appearance:auto">'+opts+'</select>'
         +'</div>';
     }
-    // Inline editable field — toggle
-    function IFTOGGLE(label, fieldKey, isOn) {
-      var disabled = IS_READONLY ? ' disabled aria-disabled="true"' : '';
-      return '<div class="ifield" data-key="'+fieldKey+'">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">'
-        +'<div style="font-size:10px;color:#9A9690;text-transform:uppercase;letter-spacing:.05em">'+label+'</div>'
-        +'<button type="button" id="desktop-tech-toggle" class="edit-toggle desktop-tech-toggle"'+disabled
-        +' onclick="toggleDesktopTech(\''+currentId+'\',this,event)" style="border:none;background:none;padding:0;margin-left:auto" aria-pressed="'+(isOn?'true':'false')+'">'
-        +'<div class="toggle-track'+(isOn?' on':'')+'"><div class="toggle-thumb"></div></div></button>'
-        +'</div></div>';
-    }
-
     // Inline editable field — textarea
     function IFTA(label, fieldKey, value) {
       var ro = IS_READONLY ? 'readonly' : '';
@@ -1225,14 +1000,13 @@ function showDetail(id) {
       +IFT('Próxima acción','proxima_accion',c.proxima_accion)
       +IFD('Fecha','fecha_proxima_accion',c.fecha_proxima_accion)
       +'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;margin-bottom:8px">'
-      +IFTOGGLE('Técnico activo','seguimiento tecnico',tec)
-      +'<div class="desktop-tech-field"'+(tec?'':' style="display:none"')+'>'+IFT('Seguimiento técnico','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])+'</div>'
-      +'<div class="desktop-tech-field"'+(tec?'':' style="display:none"')+'>'+IFD('Fecha técnica','fecha_proxima_accion_tecnica',c.fecha_proxima_accion_tecnica)+'</div>'
+      +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px">'
+      +IFT('Seguimiento técnico','Accion de seguimiento tecnico',c['Accion de seguimiento tecnico'])
+      +IFD('Fecha técnica','fecha_proxima_accion_tecnica',c.fecha_proxima_accion_tecnica)
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFT('Contacto principal','contacto principal',c['contacto principal'])
-      +IFS('Tipo de cliente',TIPO_CLIENTE_KEY,getTipoCliente(c),['','Actual','Nuevo'])
+      +IFS('Tipo de cliente','Tipo de Cliente',c['Tipo de Cliente'],['actual','nuevo'])
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
       +IFS('Estado','estado',c.estado,['Activo','Prospecto','En negociación','En riesgo','Cerrado'])
@@ -1266,7 +1040,6 @@ function showDetail(id) {
           for(var i=0;i<CUENTAS.length;i++){
             if(CUENTAS[i].key_app===id){ CUENTAS[i][key]=val; break; }
           }
-          refreshActiveLists();
           // Visual feedback
           wrap.style.background='#EAF3DE';
           wrap.style.borderColor='#1D9E75';
@@ -1297,8 +1070,7 @@ function showDetail(id) {
     +(tec?'<span class="badge bt">T\u00e9cnico activo</span>':'');
   var body='';
   if(c['tipo de cuenta'])body+=FLD('Tipo de cuenta',c['tipo de cuenta']+(c.Distri?' \u00b7 Dist: '+c.Distri:''));
-  var tipoCliente=getTipoCliente(c);
-  if(tipoCliente)body+=FLD('Tipo de cliente',tipoCliente);
+  if(c['Tipo de Cliente'])body+=FLD('Tipo de cliente',c['Tipo de Cliente']);
   if(c.proxima_accion)body+=FLD('Pr\u00f3xima acci\u00f3n',c.proxima_accion);
   if(c.fecha_proxima_accion)body+=FLD('Fecha acci\u00f3n',fmtDate(c.fecha_proxima_accion),ov?'ov':'');
   if(c.ultimo_contacto)body+=FLD('\u00daltimo contacto',fmtDate(c.ultimo_contacto));
@@ -1328,7 +1100,7 @@ function buildEditForm(c, newMode) {
     +'<div class="edit-block">'
     +'<div class="edit-row"><span class="edit-lbl">Cliente</span><input class="edit-val" name="cliente" placeholder="Nombre" value="'+(c?c.cliente||'':'')+'"></div>'
     +'<div class="edit-row"><span class="edit-lbl">Tipo de cuenta</span>'+sel('tipo de cuenta',['Monitoreo','Integrador','Instalador','Instalador/Monitoreo Mayorista','Distri'],c?c['tipo de cuenta']||'':'')+'</div>'
-    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel(TIPO_CLIENTE_KEY,['','Actual','Nuevo'],c?getTipoCliente(c):'')+'</div>'
+    +'<div class="edit-row"><span class="edit-lbl">Tipo de cliente</span>'+sel('Tipo de Cliente',['actual','nuevo',''],c?c['Tipo de Cliente']||'':'')+'</div>'
     +'<div class="edit-row"><span class="edit-lbl">Distribuidor</span><input class="edit-val" name="Distri" placeholder="Opcional" value="'+(c?c.Distri||'':'')+'"></div>'
     +'</div>'
 
@@ -1406,52 +1178,6 @@ function toDisplayDate(s) {
   return s;
 }
 
-function applyLocalAccountUpdate(id, fields) {
-  for (var i = 0; i < CUENTAS.length; i++) {
-    if (String(CUENTAS[i].key_app) === String(id)) {
-      Object.keys(fields).forEach(function(key){
-        CUENTAS[i][key] = fields[key];
-      });
-      return CUENTAS[i];
-    }
-  }
-  return null;
-}
-
-function getFilteredAccounts(key) {
-  if(key==='todas') return CUENTAS.filter(function(c){return c.cliente&&c.estado!=='Cerrado';});
-  if(key==='vencidas') return CUENTAS.filter(isOverdue);
-  if(key==='sinfecha') return CUENTAS.filter(function(c){return c.semaforo==='SIN FECHA'&&c.cliente;});
-  if(key==='tecnico') return CUENTAS.filter(function(c){return (c['seguimiento tecnico']||'').toLowerCase()==='si';});
-  if(key==='clientes'||key==='activas') return CUENTAS.filter(function(c){return c.estado==='Activo';});
-  if(key==='prospecto'||key==='estado_Prospecto') return CUENTAS.filter(function(c){return c.estado==='Prospecto';});
-  if(key==='negociacion'||key==='estado_En negociación') return CUENTAS.filter(function(c){return c.estado==='En negociación';});
-  if(key==='riesgo'||key==='estado_En riesgo') return CUENTAS.filter(function(c){return c.estado==='En riesgo';});
-  if(key==='cerradas'||key==='estado_Cerrado') return CUENTAS.filter(function(c){return c.estado==='Cerrado';});
-  if(key.indexOf('estado_')===0){var est=key.slice(7);return CUENTAS.filter(function(c){return c.estado===est;});}
-  if(key.indexOf('tipo_')===0){var tip=key.slice(5);return CUENTAS.filter(function(c){return c['tipo de cuenta']===tip;});}
-  if(key.indexOf('pri_')===0){var pri=key.slice(4);return CUENTAS.filter(function(c){return c.Prioridad===pri||PL(c)===pri;});}
-  return null;
-}
-
-function refreshActiveLists() {
-  renderAll();
-  if (IS_DESKTOP) renderDesktopMetrics();
-
-  var panel = document.getElementById('dd-cuentas-panel');
-  if (IS_DESKTOP && panel && panel.style.display === 'flex' && currentDDFilter) {
-    var refreshed = getFilteredAccounts(currentDDFilter.key);
-    if (refreshed) {
-      currentDDFilter.data = refreshed;
-      currentDDFilter.label = currentDDFilter.baseLabel || currentDDFilter.label.replace(/ \(\d+\)$/,'');
-    }
-  }
-
-  if (!IS_DESKTOP && currentMobileFilter && document.getElementById('v-filtrada').classList.contains('active')) {
-    SF(currentMobileFilter.key, currentMobileFilter.label);
-  }
-}
-
 function saveForm(newMode, tecState) {
   var fields={};
   document.querySelectorAll('#edit-body [name]').forEach(function(el){
@@ -1477,23 +1203,20 @@ function saveForm(newMode, tecState) {
     .then(function(r){return r.json();})
     .then(function(data){
       if(data.success){
-        if (!newMode && currentId) {
-          applyLocalAccountUpdate(currentId, fields);
-          refreshActiveLists();
-        }
-
         // Visual confirmation — button flashes green
         btn.textContent = '✓ Guardado';
         btn.style.background = '#1D9E75';
         setTimeout(function(){
           closeEdit();
           if(IS_DESKTOP && currentId && !newMode){
-            showDetail(currentId);
+            // Reload data then re-show detail
+            loadData();
+            setTimeout(function(){ showDetail(currentId); }, 600);
           } else {
             if(!newMode) document.getElementById('dv').classList.remove('open');
-            if(newMode) setTimeout(function(){loadData();},300);
+            setTimeout(function(){loadData();},800);
           }
-        }, 350);
+        }, 700);
       } else {
         showToast('Error: '+(data.error||'desconocido'));
         btn.textContent=newMode?'Crear cuenta':'Guardar cambios';
@@ -1544,10 +1267,7 @@ function ST(tab){
   SV('v-'+tab);prevTab=tab;CS(true);
 }
 
-var currentMobileFilter = null;
-
 function SF(key,label){
-  currentMobileFilter = {key:key,label:label};
   var data=[];
   if(key==='todas') data=CUENTAS;
   else if(key==='activas') data=CUENTAS.filter(function(c){return c.estado==='Activo';});
@@ -1570,71 +1290,6 @@ function CS(silent){
 function showToast(msg) {
   var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},2500);
-}
-
-
-function toggleDesktopTech(id, button, event) {
-  if (event) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-  if (!button || IS_READONLY || button.disabled) {
-    if (IS_READONLY) showToast('Modo solo lectura');
-    return false;
-  }
-
-  var account = null;
-  for (var i = 0; i < CUENTAS.length; i++) {
-    if (String(CUENTAS[i].key_app) === String(id)) {
-      account = CUENTAS[i];
-      break;
-    }
-  }
-  if (!account) {
-    showToast('No se encontró la cuenta');
-    return false;
-  }
-
-  var track = button.querySelector('.toggle-track');
-  if (!track) return false;
-
-  var oldState = track.classList.contains('on');
-  var newState = !oldState;
-  var newValue = newState ? 'si' : '';
-
-  track.classList.toggle('on', newState);
-  button.setAttribute('aria-pressed', newState ? 'true' : 'false');
-  document.querySelectorAll('#dd-panel-content .desktop-tech-field').forEach(function(field) {
-    field.style.display = newState ? '' : 'none';
-  });
-  account['seguimiento tecnico'] = newValue;
-
-  var payload = {
-    action: 'update',
-    id: id,
-    fields: {'seguimiento tecnico': newValue}
-  };
-
-  fetch(API + '?action=update&payload=' + encodeURIComponent(JSON.stringify(payload)))
-    .then(function(response) { return response.json(); })
-    .then(function(data) {
-      if (!data || !data.success) throw new Error('update failed');
-      showToast(newState ? 'Técnico activado' : 'Técnico desactivado');
-      renderAll();
-      if (IS_DESKTOP) renderDesktopMetrics();
-    })
-    .catch(function(error) {
-      console.error('Toggle técnico:', error);
-      track.classList.toggle('on', oldState);
-      button.setAttribute('aria-pressed', oldState ? 'true' : 'false');
-      document.querySelectorAll('#dd-panel-content .desktop-tech-field').forEach(function(field) {
-        field.style.display = oldState ? '' : 'none';
-      });
-      account['seguimiento tecnico'] = oldState ? 'si' : '';
-      showToast('No se pudo guardar el cambio');
-    });
-
-  return false;
 }
 
 // ============ EVENT DELEGATION ============
@@ -1736,11 +1391,6 @@ function initLayout() {
     }
     var hdrSearch = document.getElementById('hdr-search-desktop');
     if (hdrSearch) hdrSearch.style.display = 'flex';
-    var agendaBtn = document.getElementById('hdr-agenda-btn');
-    if (agendaBtn) {
-      agendaBtn.style.display = 'flex';
-      agendaBtn.addEventListener('click', openDesktopAgenda);
-    }
     // Wire header search
     var siHdr = document.getElementById('si-hdr');
     if (siHdr) {
@@ -1795,37 +1445,8 @@ function initLayout() {
 var DD_STATE = 'list';
 var currentDDFilter = {key:'todas', label:'Todas las cuentas'};
 
-function openDesktopAgenda() {
-  DD_STATE = 'list';
-  var dnames=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  var months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  var html='';
-  for(var i=0;i<7;i++){
-    var day=new Date(TODAY); day.setDate(day.getDate()+i);
-    var acc=CUENTAS.filter(function(c){
-      var d=parseDate(c.fecha_proxima_accion);
-      return d&&d.getTime()===day.getTime();
-    }).sort(function(a,b){ return (a.cliente||'').localeCompare(b.cliente||''); });
-    var lbl=i===0?'Hoy — '+dnames[day.getDay()]+' '+day.getDate()+' '+months[day.getMonth()]:dnames[day.getDay()]+' '+day.getDate()+' '+months[day.getMonth()];
-    if(!acc.length&&i>0) continue;
-    html+='<div class="dblock"><div class="dlbl'+(i===0?' today':'')+'">'+lbl+'</div>';
-    if(acc.length){
-      acc.forEach(function(c){
-        html+='<div class="aitem" data-action="sd" data-id="'+c.key_app+'"><div class="adot acc"></div><div><div class="aname">'+c.cliente+'</div><div class="asub">'+(c.proxima_accion||'Acción pendiente')+'</div></div></div>';
-      });
-    } else {
-      html+='<div class="aitem"><div class="adot ok"></div><div><div class="aname" style="color:#9A9690">Sin acciones</div></div></div>';
-    }
-    html+='</div>';
-  }
-  currentDDFilter={key:'agenda',label:'Agenda',baseLabel:'Agenda',data:[]};
-  document.getElementById('dd-panel-title').textContent='Agenda · próximos 7 días';
-  document.getElementById('dd-panel-content').innerHTML=html||'<div class="empty"><div class="empty-t">Sin acciones agendadas</div></div>';
-  document.getElementById('dd-cuentas-panel').style.display='flex';
-}
-
 function openDDPanel(key, label, data) {
-  currentDDFilter = {key:key, label:label, baseLabel:label.replace(/ \(\d+\)$/,''), data:data};
+  currentDDFilter = {key:key, label:label, data:data};
   DD_STATE = 'list';
   document.getElementById('dd-panel-title').textContent = label;
   var panel = document.getElementById('dd-cuentas-panel');
@@ -1835,20 +1456,12 @@ function openDDPanel(key, label, data) {
 
 function closeDDPanel() {
   document.getElementById('dd-cuentas-panel').style.display = 'none';
-  // Reset modal inner width
-  var inner = document.querySelector('#dd-cuentas-panel > div');
-  if(inner) { inner.style.width = '70%'; inner.style.height = '85vh'; inner.style.maxHeight = ''; }
   DD_STATE = 'list';
 }
 
 function renderDDPanel(filter) {
   DD_STATE = 'list';
-  var dynamicData = getFilteredAccounts(filter.key);
-  var data = dynamicData || filter.data || CUENTAS;
-  var baseLabel = filter.baseLabel || filter.label.replace(/ \(\d+\)$/,'');
-  filter.data = data;
-  filter.baseLabel = baseLabel;
-  filter.label = baseLabel + ' (' + data.length + ')';
+  var data = filter.data || CUENTAS;
   document.getElementById('dd-panel-title').textContent = filter.label;
   document.getElementById('dd-panel-content').innerHTML =
     '<div style="font-size:12px;color:#9A9690;margin-bottom:10px">'+data.length+' cuentas</div>'
@@ -1888,10 +1501,9 @@ function renderDesktopMetrics() {
   var r2 = document.getElementById('dd-r2');
   if(r1) r1.innerHTML=
     mkDDCard('Total', total, 'Excl. cerradas', '#185FA5', 100, '#185FA5', 'todas', CUENTAS.filter(function(c){return c.cliente&&c.estado!=='Cerrado';}))
-    +mkDDCard('Hoy', hoy.length, 'Acciones del día', '#185FA5', total?Math.round(hoy.length/total*100):0, '#185FA5', 'hoy', hoy)
-    +mkDDCard('Vencidas', vencidas.length, total?Math.round(vencidas.length/total*100)+'% del total':'0% del total', '#E24B4A', total?Math.round(vencidas.length/total*100):0, '#E24B4A', 'vencidas', vencidas)
-    +mkDDCard('Sin fecha', sf, 'Requieren agenda', '#9A9690', total?Math.round(sf/total*100):0, '#9A9690', 'sinfecha', CUENTAS.filter(function(c){return c.semaforo==='SIN FECHA'&&c.cliente;}))
-    +mkDDCard('T\u00e9cnico activo', tec.length, 'Con seguimiento', '#534AB7', total?Math.round(tec.length/total*100):0, '#534AB7', 'tecnico', tec);
+    +mkDDCard('Vencidas', vencidas.length, Math.round(vencidas.length/total*100)+'% del total', '#E24B4A', Math.round(vencidas.length/total*100), '#E24B4A', 'vencidas', vencidas)
+    +mkDDCard('Sin fecha', sf, 'Requieren agenda', '#9A9690', Math.round(sf/total*100), '#9A9690', 'sinfecha', CUENTAS.filter(function(c){return c.semaforo==='SIN FECHA'&&c.cliente;}))
+    +mkDDCard('T\u00e9cnico activo', tec.length, 'Con seguimiento', '#534AB7', Math.round(tec.length/total*100), '#534AB7', 'tecnico', tec);
   if(r2) r2.innerHTML=
     mkDDCard('Clientes', activas, 'Activos', '#1D9E75', null, null, 'clientes', CUENTAS.filter(function(c){return c.estado==='Activo';}))
     +mkDDCard('Prospecto', prospectos, 'En desarrollo', '#185FA5', null, null, 'prospecto', CUENTAS.filter(function(c){return c.estado==='Prospecto';}))
@@ -1953,7 +1565,6 @@ document.addEventListener('click', function(e) {
       var label = el.dataset.ddLabel;
       var data;
       if(key==='todas') data=CUENTAS.filter(function(c){return c.cliente&&c.estado!=='Cerrado';});
-      else if(key==='hoy') data=CUENTAS.filter(isToday);
       else if(key==='vencidas') data=CUENTAS.filter(isOverdue);
       else if(key==='sinfecha') data=CUENTAS.filter(function(c){return c.semaforo==='SIN FECHA'&&c.cliente;});
       else if(key==='tecnico') data=CUENTAS.filter(function(c){return (c['seguimiento tecnico']||'').toLowerCase()==='si';});
