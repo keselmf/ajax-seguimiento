@@ -898,60 +898,55 @@ function _renderPBI(d) {
       // En móvil, posicionar el carrusel en el trimestre actual y mostrar flechas de navegación.
       if (window.matchMedia('(max-width: 767px)').matches) {
         requestAnimationFrame(function(){
-          var wrap = document.querySelector('#pbi-body .pbi-qwrap');
-          var grid = document.querySelector('#pbi-body .pbi-qgrid');
-          var currentCard = document.querySelector('#pbi-body .pbi-qcard.current');
-          if (!wrap || !grid) return;
+          requestAnimationFrame(function(){
+            var wrap = document.querySelector('#pbi-body .pbi-qwrap');
+            var grid = document.querySelector('#pbi-body .pbi-qgrid');
+            var currentCard = document.querySelector('#pbi-body .pbi-qcard.current');
+            if (!wrap || !grid) return;
 
-          var leftBtn = wrap.querySelector('.pbi-qnav.left');
-          var rightBtn = wrap.querySelector('.pbi-qnav.right');
-          var cards = Array.prototype.slice.call(grid.querySelectorAll('.pbi-qcard'));
+            var leftBtn = wrap.querySelector('.pbi-qnav.left');
+            var rightBtn = wrap.querySelector('.pbi-qnav.right');
+            var cards = Array.prototype.slice.call(grid.querySelectorAll('.pbi-qcard'));
 
-          function updateQuarterNav(){
-            var maxScroll = Math.max(0, grid.scrollWidth - grid.clientWidth - 2);
-            if (leftBtn) leftBtn.classList.toggle('hidden', grid.scrollLeft <= 4);
-            if (rightBtn) rightBtn.classList.toggle('hidden', grid.scrollLeft >= maxScroll);
-          }
+            // Scroll instantáneo al Q actual
+            if (currentCard) {
+              var initialLeft = currentCard.offsetLeft - (grid.clientWidth - currentCard.offsetWidth) / 2;
+              grid.scrollLeft = Math.max(0, initialLeft);
+            }
 
-          function scrollToCard(index){
-            if (!cards.length) return;
-            var safeIndex = Math.max(0, Math.min(index, cards.length - 1));
-            var card = cards[safeIndex];
-            if (!card) return;
-            var targetLeft = card.offsetLeft - (grid.clientWidth - card.offsetWidth) / 2;
-            grid.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
-          }
+            function updateQuarterNav(){
+              var maxScroll = Math.max(0, grid.scrollWidth - grid.clientWidth - 2);
+              if (leftBtn) leftBtn.classList.toggle('hidden', grid.scrollLeft <= 4);
+              if (rightBtn) rightBtn.classList.toggle('hidden', grid.scrollLeft >= maxScroll);
+            }
 
-          function nearestCardIndex(){
-            if (!cards.length) return 0;
-            var center = grid.scrollLeft + (grid.clientWidth / 2);
-            var bestIndex = 0;
-            var bestDistance = Infinity;
-            cards.forEach(function(card, idx){
-              var cardCenter = card.offsetLeft + (card.offsetWidth / 2);
-              var dist = Math.abs(cardCenter - center);
-              if (dist < bestDistance) {
-                bestDistance = dist;
-                bestIndex = idx;
-              }
-            });
-            return bestIndex;
-          }
+            function scrollToCard(index){
+              if (!cards.length) return;
+              var safeIndex = Math.max(0, Math.min(index, cards.length - 1));
+              var card = cards[safeIndex];
+              if (!card) return;
+              var targetLeft = card.offsetLeft - (grid.clientWidth - card.offsetWidth) / 2;
+              grid.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+            }
 
-          if (leftBtn) {
-            leftBtn.onclick = function(){ scrollToCard(nearestCardIndex() - 1); };
-          }
-          if (rightBtn) {
-            rightBtn.onclick = function(){ scrollToCard(nearestCardIndex() + 1); };
-          }
+            function nearestCardIndex(){
+              if (!cards.length) return 0;
+              var center = grid.scrollLeft + (grid.clientWidth / 2);
+              var bestIndex = 0;
+              var bestDistance = Infinity;
+              cards.forEach(function(card, idx){
+                var cardCenter = card.offsetLeft + (card.offsetWidth / 2);
+                var dist = Math.abs(cardCenter - center);
+                if (dist < bestDistance) { bestDistance = dist; bestIndex = idx; }
+              });
+              return bestIndex;
+            }
 
-          grid.addEventListener('scroll', updateQuarterNav, { passive: true });
-
-          if (currentCard) {
-            var initialLeft = currentCard.offsetLeft - (grid.clientWidth - currentCard.offsetWidth) / 2;
-            grid.scrollLeft = Math.max(0, initialLeft);
-          }
-          updateQuarterNav();
+            if (leftBtn) leftBtn.onclick = function(){ scrollToCard(nearestCardIndex() - 1); };
+            if (rightBtn) rightBtn.onclick = function(){ scrollToCard(nearestCardIndex() + 1); };
+            grid.addEventListener('scroll', updateQuarterNav, { passive: true });
+            updateQuarterNav();
+          });
         });
       }
 
