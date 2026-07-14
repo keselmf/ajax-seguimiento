@@ -976,10 +976,8 @@ function openDiarioModal(qNum) {
   }
 }
 
-var ACCOUNTS_CACHE_KEY = 'ajax_cuentas_cache_v1';
-var ACCOUNTS_CACHE_TIME_KEY = 'ajax_cuentas_cache_time_v1';
-var ACCOUNTS_DB_NAME = 'ajax_seguimiento_cache';
-var ACCOUNTS_DB_STORE = 'data';
+var ACCOUNTS_CACHE_KEY = 'ajax_cuentas';
+var ACCOUNTS_CACHE_TIME_KEY = 'ajax_cuentas_time';
 var LAST_DATA_SIG = '';
 var SECONDARY_DIRTY = {vencidas:true,hoy:true,tecnico:true,agenda:true};
 var DATA_LOAD_PROMISE = null;
@@ -1029,64 +1027,51 @@ function applyAccountsData(rows, source, stamp) {
   }
 }
 
-function openAccountsDB() {
-  return new Promise(function(resolve, reject){
-    if (!window.indexedDB) { reject(new Error('IndexedDB no disponible')); return; }
-    var req = indexedDB.open(ACCOUNTS_DB_NAME, 1);
-    req.onupgradeneeded = function(){
-      var db = req.result;
-      if (!db.objectStoreNames.contains(ACCOUNTS_DB_STORE)) db.createObjectStore(ACCOUNTS_DB_STORE);
-    };
-    req.onsuccess = function(){ resolve(req.result); };
-    req.onerror = function(){ reject(req.error || new Error('No se pudo abrir IndexedDB')); };
-  });
-}
-
-function readAccountsCacheIDB() {
-  return openAccountsDB().then(function(db){
-    return new Promise(function(resolve, reject){
-      var tx = db.transaction(ACCOUNTS_DB_STORE, 'readonly');
-      var req = tx.objectStore(ACCOUNTS_DB_STORE).get('accounts');
-      req.onsuccess = function(){ resolve(req.result || null); };
-      req.onerror = function(){ reject(req.error); };
-      tx.oncomplete = function(){ db.close(); };
-    });
-  });
-}
-
-function writeAccountsCacheIDB(rows) {
-  return openAccountsDB().then(function(db){
-    return new Promise(function(resolve, reject){
-      var tx = db.transaction(ACCOUNTS_DB_STORE, 'readwrite');
-      tx.objectStore(ACCOUNTS_DB_STORE).put({ rows: rows, timestamp: Date.now() }, 'accounts');
-      tx.oncomplete = function(){ db.close(); resolve(); };
-      tx.onerror = function(){ db.close(); reject(tx.error); };
-    });
-  });
-}
-
-function readLegacyLocalCache() {
+function parseAccountsCacheValue(raw) {
+  if (!raw) return null;
   try {
-    var raw = localStorage.getItem(ACCOUNTS_CACHE_KEY);
-    if (!raw) return null;
-    var rows = JSON.parse(raw);
-    if (!Array.isArray(rows) || !rows.length) return null;
-    var stamp = Number(localStorage.getItem(ACCOUNTS_CACHE_TIME_KEY) || 0);
-    return { rows: rows, timestamp: stamp || Date.now() };
+    var parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && Array.isArray(parsed.rows)) return parsed.rows;
+    if (parsed && Array.isArray(parsed.data)) return parsed.data;
+  } catch(e) {}
+  return null;
+}
+
+function readAccountsCache() {
+  try {
+    // Clave actual y claves utilizadas por versiones anteriores.
+    var keys = [ACCOUNTS_CACHE_KEY, 'ajax_cuentas_cache_v1', 'ajax_cuentas_cache'];
+    for (var i=0; i<keys.length; i++) {
+      var rows = parseAccountsCacheValue(localStorage.getItem(keys[i]));
+      if (rows && rows.length) {
+        var stamp = Number(localStorage.getItem(ACCOUNTS_CACHE_TIME_KEY) || 0);
+        // Migrar inmediatamente a la clave canónica.
+        if (keys[i] !== ACCOUNTS_CACHE_KEY) {
+          try { localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(rows)); } catch(ignore) {}
+        }
+        return { rows: rows, timestamp: stamp || Date.now() };
+      }
+    }
+    return null;
   } catch(e) {
+    console.error('Error leyendo ajax_cuentas:', e);
     return null;
   }
 }
 
-function loadCachedAccounts() {
-  return readAccountsCacheIDB()
-    .catch(function(){ return null; })
-    .then(function(cached){
-      if (!cached || !Array.isArray(cached.rows) || !cached.rows.length) cached = readLegacyLocalCache();
-      if (!cached || !cached.rows || !cached.rows.length) return false;
-      applyAccountsData(cached.rows, 'cache', cached.timestamp);
-      return true;
-    });
+function writeAccountsCache(rows) {
+  var payload = JSON.stringify(rows || []);
+  var now = String(Date.now());
+  try {
+    // Guardar siempre en la clave original usada por la app.
+    localStorage.setItem('ajax_cuentas', payload);
+    localStorage.setItem(ACCOUNTS_CACHE_TIME_KEY, now);
+    // Mantener compatibilidad con versiones intermedias todavía instaladas.
+    localStorage.setItem('ajax_cuentas_cache_v1', payload);
+  } catch(e) {
+    console.error('Error guardando ajax_cuentas:', e);
+  }
 }
 
 function fetchAccountsFromNetwork() {
@@ -1098,15 +1083,9 @@ function fetchAccountsFromNetwork() {
         return;
       }
 
-      var rows = data.data || [];
+      var rows = (data.data || []).filter(function(c){ return c.key_app && c.cliente; });
+      writeAccountsCache(rows);
       applyAccountsData(rows, 'network', Date.now());
-
-      writeAccountsCacheIDB(rows).catch(function(){
-        try {
-          localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(rows));
-          localStorage.setItem(ACCOUNTS_CACHE_TIME_KEY, String(Date.now()));
-        } catch(e) {}
-      });
     })
     .catch(function(e){
       if (!CUENTAS.length) showToast('Error de conexión');
@@ -1117,18 +1096,14 @@ function fetchAccountsFromNetwork() {
 function loadData(options) {
   options = options || {};
 
+  if (!options.skipCache && !CUENTAS.length) {
+    var cached = readAccountsCache();
+    if (cached) applyAccountsData(cached.rows, 'cache', cached.timestamp);
+  }
+
   if (DATA_LOAD_PROMISE && !options.force) return DATA_LOAD_PROMISE;
 
-  var cacheStep = (!options.skipCache && !CUENTAS.length)
-    ? loadCachedAccounts()
-    : Promise.resolve(false);
-
-  DATA_LOAD_PROMISE = cacheStep
-    .catch(function(){ return false; })
-    .then(function(){
-      // La red se consulta recién después de pintar la caché local.
-      return fetchAccountsFromNetwork();
-    })
+  DATA_LOAD_PROMISE = fetchAccountsFromNetwork()
     .finally(function(){ DATA_LOAD_PROMISE = null; });
 
   return DATA_LOAD_PROMISE;
@@ -2151,9 +2126,16 @@ window.addEventListener('resize', function(){
   if (IS_DESKTOP !== wasDesktop) initLayout();
 });
 
+// Pintar la caché de cuentas antes de iniciar cualquier solicitud de red.
+var initialAccountsCache = readAccountsCache();
+if (initialAccountsCache) {
+  applyAccountsData(initialAccountsCache.rows, 'cache', initialAccountsCache.timestamp);
+}
+
 initLayout();
 
-loadData();
+// Actualizar en segundo plano sin volver a leer la caché.
+loadData({ skipCache:true });
 loadPBI();
 
 // Auto-refresh every 5 minutes
