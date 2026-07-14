@@ -216,7 +216,6 @@ body{font-family:Inter,sans-serif;background:#F5F4F1;color:#1A1916;height:100vh;
     gap:10px;
     overflow-x:auto;
     scroll-snap-type:x mandatory;
-    scroll-behavior:smooth;
     padding:2px 16px 10px;
     margin-left:-14px;
     margin-right:-14px;
@@ -908,10 +907,12 @@ function _renderPBI(d) {
             var rightBtn = wrap.querySelector('.pbi-qnav.right');
             var cards = Array.prototype.slice.call(grid.querySelectorAll('.pbi-qcard'));
 
-            // Scroll instantáneo al Q actual
+            // Inicializar directo en el Q actual sin animación
             if (currentCard) {
               var initialLeft = currentCard.offsetLeft - (grid.clientWidth - currentCard.offsetWidth) / 2;
+              grid.style.scrollBehavior = 'auto';
               grid.scrollLeft = Math.max(0, initialLeft);
+              grid.style.scrollBehavior = '';
             }
 
             function updateQuarterNav(){
